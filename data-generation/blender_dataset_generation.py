@@ -62,6 +62,7 @@ def render_box(z_angle, image_path):
     scene = bpy.context.scene
     scene.render.engine = "CYCLES"
     scene.render.image_settings.file_format = "PNG"
+    scene.render.image_settings.color_mode = 'RGB'
     scene.cycles.samples = 32
     scene.render.resolution_x = 256
     scene.render.resolution_y = 256
