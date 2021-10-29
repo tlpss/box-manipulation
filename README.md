@@ -26,14 +26,16 @@ example of the json format used in the dataset. Image paths are relative to a ba
   "dataset": [
       { "image_path": "path",
         "corner_keypoints": [[1,3], [5,5],[4,7],[10,10]],
-        "flap_keypoints": [[1,3], [5,5],[4,7],[10,10]],
+        "flap_corner_keypoints": [[1,3], [5,5],[4,7],[10,10], [1,2],[1,3],[2,3],[3,4]],
+        "flap_center_keypoints": [[1,3], [5,5],[4,7],[10,10]],
         "metadata": {}
       },
-      { "image_path": "path2",
+      { "image_path": "path",
         "corner_keypoints": [[1,3], [5,5],[4,7],[10,10]],
-        "flap_keypoints": [[1,3], [5,5],[4,7],[10,10]],
+        "flap_corner_keypoints": [[1,3], [5,5],[4,7],[10,10], [1,2],[1,3],[2,3],[3,4]],
+        "flap_center_keypoints": [[1,3], [5,5],[4,7],[10,10]],
         "metadata": {}
-      }
+      },
     ]
 }
 ```
