@@ -38,12 +38,15 @@ class BoxKeypointsDataset(Dataset):
     def __len__(self):
         return len(self.dataset)
 
-    def convert_keypoint_coordinates_to_pixel_coordinates(keypoints: torch.Tensor, image_shape: int) -> torch.Tensor:
+    def convert_keypoint_coordinates_to_pixel_coordinates(
+        self, keypoints: torch.Tensor, image_shape: int
+    ) -> torch.Tensor:
         """
         Note: only works for squared Images!
         """
         keypoints *= image_shape
         keypoints[:, -1] = image_shape - keypoints[:, -1]
+        return keypoints
 
     def __getitem__(self, index):
         if torch.is_tensor(index):
@@ -64,7 +67,6 @@ class BoxKeypointsDataset(Dataset):
 
         corner_keypoints = self.convert_keypoint_coordinates_to_pixel_coordinates(corner_keypoints, image.shape[-1])
         flap_keypoints = self.convert_keypoint_coordinates_to_pixel_coordinates(flap_keypoints, image.shape[-1])
-
         return image, corner_keypoints, flap_keypoints
 
 

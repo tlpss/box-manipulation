@@ -5,7 +5,9 @@
 	"build":{
 		"dockerfile": "docker/JupyterLab/Dockerfile"
 	},
-	"runArgs": ["--shm-size=256m"], // increase size of shared memory
+	// increase shared memory to 1GB
+	// enable GPUs on the local device (requires nivida docker toolkit!)
+	"runArgs": ["--shm-size=1g", "--gpus", "all"],
 	// Set *default* container specific settings.json values on container create.
 	"settings": {},
 
