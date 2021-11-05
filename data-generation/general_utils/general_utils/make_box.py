@@ -61,7 +61,7 @@ def make_box(box_length, box_width, box_height, flap_angles):
 
     # Shift all vertices so object origin will be at world origin.
     for v in vertices:
-        v -= np.array([w/2, l/2, 0])
+        v -= np.array([w / 2, l / 2, 0])
 
     return vertices, edges, faces
 

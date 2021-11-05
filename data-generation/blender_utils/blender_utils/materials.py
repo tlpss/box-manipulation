@@ -1,5 +1,6 @@
 import bpy
 
+
 def random_box_material():
     box_color = [0.401969, 0.175731, 0.067917, 1.000000]
     box_material = bpy.data.materials.new(name="Box")

@@ -4,7 +4,7 @@ from mathutils import Vector
 
 def look_at(point, camera):
     direction = Vector(point) - camera.location
-    rot_quat = direction.to_track_quat('-Z', 'Y')
+    rot_quat = direction.to_track_quat("-Z", "Y")
     camera.rotation_euler = rot_quat.to_euler()
 
 
@@ -14,7 +14,7 @@ def make_object(name, mesh):
     mesh.from_pydata(vertices, edges, faces)
     mesh.update()
     object = bpy.data.objects.new(name, mesh)
-    collection = bpy.data.collections['Collection']
+    collection = bpy.data.collections["Collection"]
     collection.objects.link(object)
     return object
 
@@ -25,13 +25,14 @@ def set_location(object, location):
     bpy.ops.object.transform_apply(location=True)
 
 
-def rotate(object, angle, axis='Z'):
+def rotate(object, angle, axis="Z"):
     select_only(object)
     # Ugly way to set context for transform, figure out the right way to do this.
     ov = bpy.context.copy()
     ov["area"] = [a for a in bpy.context.screen.areas if a.type == "VIEW_3D"][0]
     bpy.ops.transform.rotate(ov, value=angle, orient_axis=axis, orient_type="GLOBAL")
     bpy.ops.object.transform_apply(rotation=True)
+
 
 def cleanup_scene():
     """Cleanup the scene by removing objects, orphan data and custom properties"""
@@ -70,6 +71,6 @@ def remove_orphan_data():
 
 def select_only(blender_object):
     """Selects and actives a Blender object and deselects all others"""
-    bpy.ops.object.select_all(action='DESELECT')
+    bpy.ops.object.select_all(action="DESELECT")
     bpy.context.view_layer.objects.active = blender_object
     blender_object.select_set(True)
