@@ -4,7 +4,7 @@ from mathutils import Vector
 
 def look_at(point, camera):
     direction = Vector(point) - camera.location
-    rot_quat = direction.to_track_quat("-Z", "Y")
+    rot_quat = direction.to_track_quat('-Z', 'Y')
     camera.rotation_euler = rot_quat.to_euler()
 
 
@@ -13,7 +13,7 @@ def make_object(name, vertices, edges, faces):
     mesh.from_pydata(vertices, edges, faces)
     mesh.update()
     object = bpy.data.objects.new(name, mesh)
-    collection = bpy.data.collections["Collection"]
+    collection = bpy.data.collections['Collection']
     collection.objects.link(object)
     return object
 
@@ -55,6 +55,6 @@ def remove_orphan_data():
 
 def select_only(blender_object):
     """Selects and actives a Blender object and deselects all others"""
-    bpy.ops.object.select_all(action="DESELECT")
+    bpy.ops.object.select_all(action='DESELECT')
     bpy.context.view_layer.objects.active = blender_object
     blender_object.select_set(True)

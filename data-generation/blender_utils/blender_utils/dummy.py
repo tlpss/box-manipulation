@@ -1,2 +1,2 @@
 def foo() -> None:
-    print("foo called")
+    print('foo called')
