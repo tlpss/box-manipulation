@@ -9,9 +9,9 @@ import bpy
 from bpy_extras.object_utils import world_to_camera_view
 from mathutils import Vector
 
-from general_utils.make_box import make_box
-from blender_utils.object_ops import make_object, cleanup_scene, look_at, select_only
-
+from general_utils.make_box import make_box, random_flag_angles
+from blender_utils.object_ops import make_object, rotate, set_location, cleanup_scene, look_at, select_only
+from blender_utils.materials import random_box_material
 
 def render_box(z_angle, image_path):
     cleanup_scene()
@@ -35,29 +35,19 @@ def render_box(z_angle, image_path):
     camera.data.lens = 50  # focal length in mm
     look_at([0, 0, 0], camera)
 
-    l, w, h = 0.21, 0.25, 0.1
-    vertices, edges, faces = make_box(l, w, h, [-np.pi / 4] * 4)
-    box = make_object('Box', vertices, edges, faces)
-    box.location = (-w / 2 + 0.02, -l / 2 + 0.01, 0)
-    select_only(box)
-    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    l = np.random.uniform(0.1, 0.5)
+    w = np.random.uniform(0.1, l)
+    h = np.random.uniform(0.1, 0.3)
 
-    # Ugly way to set context for transform, figure out the right way to do this.
-    ov = bpy.context.copy()
-    ov['area'] = [a for a in bpy.context.screen.areas if a.type == 'VIEW_3D'][0]
+    angles = random_flag_angles()
+    mesh = make_box(l, w, h, angles)
+    box = make_object("Box", mesh)
 
-    bpy.ops.transform.rotate(ov, value=z_angle, orient_axis='Z', orient_type='GLOBAL')
 
-    bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+    set_location(box, (0.02, 0.01, 0))
+    rotate(box, z_angle)
 
-    box_color = [0.401969, 0.175731, 0.067917, 1.000000]
-    box_material = bpy.data.materials.new(name='Box')
-    box_material.diffuse_color = box_color
-    box_material.use_nodes = True
-    box_bsdf = box_material.node_tree.nodes['Principled BSDF']
-    box_bsdf.inputs['Base Color'].default_value = box_color
-    box_bsdf.inputs['Roughness'].default_value = 0.9
-    box.data.materials.append(box_material)
+    box.data.materials.append(random_box_material())
 
     scene = bpy.context.scene
     scene.render.engine = 'CYCLES'
@@ -66,7 +56,6 @@ def render_box(z_angle, image_path):
     scene.cycles.samples = 32
     scene.render.resolution_x = 256
     scene.render.resolution_y = 256
-    scene.cycles.samples = 32
     scene.camera = camera
     scene.render.filepath = image_path
     bpy.ops.render.render(write_still=True)
@@ -82,12 +71,13 @@ def render_box(z_angle, image_path):
     return corner_keypoints
 
 
-if __name__ == '__main__':
-    output_dir = '/home/idlab185/box_dataset'
+if __name__ == "__main__":
+    output_dir = "/home/idlab185/box_dataset_temp"
+
     dataset = []
     np.random.seed(0)
 
-    for i in range(100):
+    for i in range(1):
         z_angle = np.random.uniform(0.0, 2 * np.pi)
         image_name = 'box' + str(i)  + '.png'
         relative_path = os.path.join('images', image_name)
