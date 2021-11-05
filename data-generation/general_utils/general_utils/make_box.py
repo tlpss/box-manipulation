@@ -30,8 +30,9 @@ def add_flap(edge, flap_length, angle, vertices, edges, faces):
     faces += [(id0, id2, id3, id1)]
 
 
-def make_box(box_length, box_width, box_height, flap_angles):
+def make_box(box_length, box_width, box_height, flap_angles, flap_lengths):
     l, w, h = box_length, box_width, box_height
+    flap_lengths *= 2  # [long, short] -> [long, short, long, short]
 
     # Bottom face
     vertices = [  # 0, 1, 2, 3
@@ -56,8 +57,8 @@ def make_box(box_length, box_width, box_height, flap_angles):
     edges += rim_edges + standing_edges
     faces += [(0, 4, 5, 1), (1, 5, 6, 2), (2, 3, 7, 6), (0, 4, 7, 3)]
 
-    for edge, angle in zip(rim_edges, flap_angles):
-        add_flap(edge, 0.05, angle, vertices, edges, faces)
+    for edge, angle, length in zip(rim_edges, flap_angles, flap_lengths):
+        add_flap(edge, length, angle, vertices, edges, faces)
 
     # Shift all vertices so object origin will be at world origin.
     for v in vertices:
