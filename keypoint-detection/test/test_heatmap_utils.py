@@ -1,7 +1,7 @@
 import unittest
 
 import torch
-from src.heatmap_utils import gaussian_heatmap, generate_keypoints_heatmap, get_keypoints_from_heatmap
+from src.keypoint_utils import gaussian_heatmap, generate_keypoints_heatmap, get_keypoints_from_heatmap
 
 
 class TestHeatmapUtils(unittest.TestCase):
@@ -12,13 +12,10 @@ class TestHeatmapUtils(unittest.TestCase):
         self.sigma = 3
 
     def test_gaussian(self):
-
         img = gaussian_heatmap((self.image_height, self.image_width), self.keypoints[0], torch.Tensor([self.sigma]))
-
         self.assertEqual(img.shape, (self.image_height, self.image_width))
 
     def test_keypoint_generation_and_extraction(self):
-
         heatmap = generate_keypoints_heatmap((self.image_height, self.image_width), self.keypoints, self.sigma)
         extracted_keypoints = get_keypoints_from_heatmap(heatmap, 1)
         for keypoint in extracted_keypoints:

@@ -47,6 +47,7 @@ def generate_keypoints_heatmap(
     Returns:
          Torch.tensor:  A Tensor with the combined heatmaps of all keypoints.
     """
+
     img = torch.zeros(image_size)  # (h,w) dimensions
     sigma = torch.Tensor([sigma])
     for keypoint in keypoints:
