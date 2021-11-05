@@ -1,4 +1,5 @@
-# box-manipulation
+# box-manipulation [![pre-commit.ci status](https://results.pre-commit.ci/badge/github/tlpss/box-manipulation/master.svg)](https://results.pre-commit.ci/latest/github/tlpss/box-manipulation/master)
+
 Using the AIRO UR3e to open the flaps of a box.
 
 
@@ -44,3 +45,15 @@ example of the json format used in the dataset. Image paths are relative to a ba
 ### Development environment
 - run vscode remote development or manually build the Dockerfile in `.devcontainer/docker/JupyterLab/Dockerfile`
 - notebooks
+
+## Developer Guide
+
+### Code Formatting
+This project uses [pre-commit](https://pre-commit.com/) for managing git hooks that do code formatting, checks and linting.
+
+These hooks are defined in `.pre-commit-config.yaml` and pre-commit will download the required tools (e.g. autoflake) if they are not installed in the environment. Furhtermore the pre-commit CI infrastructure will run all the hooks on push and pull request actions.
+
+To install the hooks locally:
+
+- run `pre-commit install` from the development environment (inside the conda env!), which attaches the hooks. From now on, the hooks will run when a commit is made to git.
+- to manually run the hooks, run `pre-commit` or ` pre-commit run --al-files` to not only run the against the locally changed files.
