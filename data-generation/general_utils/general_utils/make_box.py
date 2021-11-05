@@ -30,7 +30,7 @@ def add_flap(edge, flap_length, angle, vertices, edges, faces):
     faces += [(id0, id2, id3, id1)]
 
 
-def make_box(box_length, box_width, box_height, angles):
+def make_box(box_length, box_width, box_height, flap_angles):
     l, w, h = box_length, box_width, box_height
 
     # Bottom face
@@ -56,7 +56,40 @@ def make_box(box_length, box_width, box_height, angles):
     edges += rim_edges + standing_edges
     faces += [(0, 4, 5, 1), (1, 5, 6, 2), (2, 3, 7, 6), (0, 4, 7, 3)]
 
-    for edge, angle in zip(rim_edges, angles):
+    for edge, angle in zip(rim_edges, flap_angles):
         add_flap(edge, 0.05, angle, vertices, edges, faces)
 
+    # Shift all vertices so object origin will be at world origin.
+    for v in vertices:
+        v -= np.array([w/2, l/2, 0])
+
     return vertices, edges, faces
+
+
+def inside_box(angle):
+    return np.pi / 2 <= angle <= np.pi
+
+
+def above_box(angle):
+    return 0 <= angle <= np.pi / 2
+
+
+def flap_angles_collision_free(angles):
+    for i in range(angles.shape[0] - 1):
+        a = angles[i]
+        a_prev = angles[i - 1]
+        a_next = angles[i + 1]
+
+        if inside_box(a) and (inside_box(a_prev) or inside_box(a_next)):
+            return False
+
+        if above_box(a) and (above_box(a_prev) or above_box(a_next)):
+            return False
+    return True
+
+
+def random_flag_angles():
+    while True:
+        angles = np.random.uniform(-np.pi, np.pi, 4)
+        if flap_angles_collision_free(angles):
+            return angles
