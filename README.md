@@ -1,5 +1,5 @@
 # box-manipulation
-Using the AIRO UR3e to open the flaps of a box. 
+Using the AIRO UR3e to open the flaps of a box.
 
 
 ## Dataset Generation
@@ -20,7 +20,7 @@ You can use the script by doing the following steps:
 
 ####  json layout
 
-example of the json format used in the dataset. Image paths are relative to a base directory 
+example of the json format used in the dataset. Image paths are relative to a base directory
 ```
 {
   "dataset": [
@@ -43,6 +43,4 @@ example of the json format used in the dataset. Image paths are relative to a ba
 
 ### Development environment
 - run vscode remote development or manually build the Dockerfile in `.devcontainer/docker/JupyterLab/Dockerfile`
-- notebooks 
-
-
+- notebooks

@@ -5,7 +5,7 @@
 	"build":{
 		"dockerfile": "docker/JupyterLab/Dockerfile"
 	},
-	"runArgs": ["--shm-size=256m"],
+	"runArgs": ["--shm-size=256m"], // increase size of shared memory
 	// Set *default* container specific settings.json values on container create.
 	"settings": {},
 
