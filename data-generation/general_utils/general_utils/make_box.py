@@ -89,7 +89,7 @@ def flap_angles_collision_free(angles):
     return True
 
 
-def random_flag_angles():
+def random_flap_angles():
     while True:
         angles = np.random.uniform(-np.pi, np.pi, 4)
         if flap_angles_collision_free(angles):
