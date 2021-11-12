@@ -40,7 +40,7 @@ def generate_keypoints_heatmap(
     Origin is topleft corner and u goes right, v down.
 
     Args:
-        image_size: Tuple(int,int) that specify (W,H) of the heatmap image
+        image_size: Tuple(int,int) that specify (H,W) of the heatmap image
         keypoints: List(Tuple(int,int), ...) with keypoints (u,v).
         sigma: (float) std deviation of the blobs
 

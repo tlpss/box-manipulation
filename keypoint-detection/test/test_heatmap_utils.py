@@ -20,3 +20,5 @@ class TestHeatmapUtils(unittest.TestCase):
         extracted_keypoints = get_keypoints_from_heatmap(heatmap, 1)
         for keypoint in extracted_keypoints:
             self.assertTrue(keypoint in self.keypoints)
+        self.assertEqual(self.image_height, heatmap.shape[0])
+        self.assertEqual(self.image_width, heatmap.shape[1])

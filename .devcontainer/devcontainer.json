@@ -1,13 +1,13 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
 // https://github.com/microsoft/vscode-dev-containers/tree/v0.202.5/containers/ubuntu
 {
-	"name": "box-manipulation-remote-container",
+	"name": "box-manipulation-dev-container",
 	"build":{
 		"dockerfile": "docker/JupyterLab/Dockerfile"
 	},
 	// increase shared memory to 1GB
 	// enable GPUs on the local device (requires nivida docker toolkit!)
-	"runArgs": ["--shm-size=1g", "--gpus", "all"],
+	"runArgs": ["--shm-size=1g" ], //, "--gpus", "all"],
 	// Set *default* container specific settings.json values on container create.
 	"settings": {},
 
