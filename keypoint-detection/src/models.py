@@ -143,13 +143,13 @@ class KeypointDetector(pl.LightningModule):
         corner_heatmaps = self.create_heatmap_batch(imgs[0].shape[1:], corner_keypoints)
         predicted_heatmaps = self.forward(imgs)  # create heatmaps JIT, is this desirable?
         predicted_corner_heatmaps = predicted_heatmaps[:, 0, :, :]
-        corner_loss = self.loss(predicted_corner_heatmaps, corner_heatmaps)
+        corner_loss = self.heatmap_loss(predicted_corner_heatmaps, corner_heatmaps)
         loss = corner_loss
 
         if self.detect_flap_keypoints:
             flap_heatmaps = self.create_heatmap_batch(imgs[0].shape[1:], flap_keypoints)
             predicted_flap_heatmaps = predicted_heatmaps[:, 1, :, :]
-            flap_loss = self.loss(predicted_flap_heatmaps, flap_heatmaps)
+            flap_loss = self.heatmap_loss(predicted_flap_heatmaps, flap_heatmaps)
             loss += flap_loss
 
         ## logging

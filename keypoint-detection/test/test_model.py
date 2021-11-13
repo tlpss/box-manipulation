@@ -1,3 +1,4 @@
+import os
 import unittest
 
 import pytorch_lightning as pl
@@ -23,19 +24,35 @@ class TestHeatmapUtils(unittest.TestCase):
         self.assertTrue(loss >= 0)
 
     def test_heatmap_batch(self):
-        # TODO
-        pass
+        batch_tensor = torch.Tensor([self.keypoints, self.keypoints])
+        print(batch_tensor.shape)
+        batch_heatmap = self.model.create_heatmap_batch((self.image_height, self.image_width), batch_tensor)
+        self.assertEqual(batch_heatmap.shape, (2, self.image_height, self.image_width))
 
 
-class TestModelOverfit(unittest.TestCase):
+class TestModel(unittest.TestCase):
     def setUp(self) -> None:
         self.model = KeypointDetector()
 
-    def test_overfit(self):
+    def test_batch(self):
+        """
+        run train and evaluation to see if all goes as expected
+        """
         model = KeypointDetector()
-        # todo: fix paths
-        module = BoxKeypointsDataModule(BoxKeypointsDataset("./mock_dataset/dataset.json", "./mock_dataset/images"), 1)
-        trainer = pl.Trainer(max_epochs=20)
+        TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+
+        module = BoxKeypointsDataModule(
+            BoxKeypointsDataset(
+                os.path.join(TEST_DIR, "test_dataset/dataset.json"), os.path.join(TEST_DIR, "test_dataset")
+            ),
+            2,
+        )
+        trainer = pl.Trainer(max_epochs=2, log_every_n_steps=1)
         trainer.fit(model, module)
 
-        self.assertTrue(model(next(iter(module))))
+        batch = next(iter(module.train_dataloader()))
+        imgs, corner_keypoints, flap_keypoints = batch
+        with torch.no_grad():
+            model(imgs)
+            
+    # TODO: test on GPU if available

@@ -42,6 +42,7 @@ class BoxKeypointsDataset(Dataset):
         self, keypoints: torch.Tensor, image_shape: int
     ) -> torch.Tensor:
         """
+        Converts the keypoint coordinates as generated in Blender to (u,v) coordinates with the origin in the top left corner and the u-axis going right.
         Note: only works for squared Images!
         """
         keypoints *= image_shape
@@ -53,10 +54,12 @@ class BoxKeypointsDataset(Dataset):
             index = index.tolist()
         index = int(index)
 
+        # load images @runtime
         image_path = os.path.join(os.getcwd(), self.image_dir, self.dataset[index]["image_path"])
         image = io.imread(image_path)
         image = self.transform(image)
 
+        # read keypoints
         corner_keypoints = torch.Tensor(self.dataset[index]["corner_keypoints"])
         if self.flap_keypoints_type == "center":
             flap_keypoints = torch.Tensor(self.dataset[index]["flap_center_keypoints"])
@@ -64,23 +67,30 @@ class BoxKeypointsDataset(Dataset):
             flap_keypoints = torch.Tensor(self.dataset[index]["flap_corner_keypoints"])
 
         # convert keypoints to pixel coords
-
         corner_keypoints = self.convert_keypoint_coordinates_to_pixel_coordinates(corner_keypoints, image.shape[-1])
         flap_keypoints = self.convert_keypoint_coordinates_to_pixel_coordinates(flap_keypoints, image.shape[-1])
+
         return image, corner_keypoints, flap_keypoints
 
 
 class BoxKeypointsDataModule(pl.LightningDataModule):
-    def __init__(self, dataset: BoxKeypointsDataset, batch_size: int = 4):
+    def __init__(self, dataset: BoxKeypointsDataset, batch_size: int = 4, validation_split_ratio=0.1):
         super().__init__()
         self.dataset = dataset
         self.batch_size = batch_size
 
-        # TODO: split in test and train set
-        self.train_dataset = dataset
+        validation_size = int(validation_split_ratio * len(self.dataset))
+        train_size = len(self.dataset) - validation_size
+        self.train_dataset, self.validation_dataset = torch.utils.data.random_split(
+            self.dataset, [train_size, validation_size]
+        )
 
     def train_dataloader(self):
-        dataloader = DataLoader(self.train_dataset, self.batch_size, shuffle=True, num_workers=4)
+        dataloader = DataLoader(self.train_dataset, self.batch_size, shuffle=False, num_workers=4)
+        return dataloader
+
+    def val_dataloader(self):
+        dataloader = DataLoader(self.validation_dataset, self.batch_size, shuffle=False, num_workers=4)
         return dataloader
 
     def test_dataloader(self):
