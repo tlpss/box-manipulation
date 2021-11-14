@@ -46,6 +46,7 @@ class TestModel(unittest.TestCase):
                 os.path.join(TEST_DIR, "test_dataset/dataset.json"), os.path.join(TEST_DIR, "test_dataset")
             ),
             2,
+            0.5 # make sure val dataloader has len >= 1
         )
         trainer = pl.Trainer(max_epochs=2, log_every_n_steps=1)
         trainer.fit(model, module)
