@@ -1,3 +1,7 @@
+from __future__ import annotations  # allow typing of own class objects
+
+import math
+from dataclasses import dataclass
 from typing import Tuple
 
 import numpy as np
@@ -5,6 +9,24 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 from src.keypoint_utils import generate_keypoints_heatmap
+
+
+@dataclass
+class Keypoint:
+    """A simple class datastructure for Keypoints,
+    dataclass is chosen over named tuple because this class is inherited by other classes
+    """
+
+    u: int
+    v: int
+
+    def l2_distance(self, keypoint: Keypoint):
+        return math.sqrt((self.u - keypoint.u) ** 2 + (self.v - keypoint.v) ** 2)
+
+
+@dataclass
+class DetectedKeypoint(Keypoint):
+    probability: float
 
 
 class KeypointDetector(pl.LightningModule):
@@ -40,49 +62,102 @@ class KeypointDetector(pl.LightningModule):
         kernel_size = (3, 3)
         self.model = nn.Sequential(
             nn.Conv2d(
-                in_channels=self.n_channels_in, out_channels=n_channels, kernel_size=kernel_size, padding="same"
-            ),
-            nn.LeakyReLU(),
-            nn.Conv2d(in_channels=n_channels, out_channels=n_channels, kernel_size=kernel_size, padding="same"),
-            nn.LeakyReLU(),
-            nn.Conv2d(
-                in_channels=n_channels, out_channels=n_channels, kernel_size=kernel_size, dilation=2, padding="same"
+                in_channels=self.n_channels_in,
+                out_channels=n_channels,
+                kernel_size=kernel_size,
+                padding="same",
             ),
             nn.LeakyReLU(),
             nn.Conv2d(
-                in_channels=n_channels, out_channels=n_channels, kernel_size=kernel_size, dilation=4, padding="same"
+                in_channels=n_channels,
+                out_channels=n_channels,
+                kernel_size=kernel_size,
+                padding="same",
             ),
             nn.LeakyReLU(),
             nn.Conv2d(
-                in_channels=n_channels, out_channels=n_channels, kernel_size=kernel_size, dilation=8, padding="same"
+                in_channels=n_channels,
+                out_channels=n_channels,
+                kernel_size=kernel_size,
+                dilation=2,
+                padding="same",
             ),
             nn.LeakyReLU(),
             nn.Conv2d(
-                in_channels=n_channels, out_channels=n_channels, kernel_size=kernel_size, dilation=16, padding="same"
-            ),
-            nn.LeakyReLU(),
-            nn.Conv2d(in_channels=n_channels, out_channels=n_channels, kernel_size=kernel_size, padding="same"),
-            nn.LeakyReLU(),
-            nn.Conv2d(
-                in_channels=n_channels, out_channels=n_channels, kernel_size=kernel_size, dilation=2, padding="same"
-            ),
-            nn.LeakyReLU(),
-            nn.Conv2d(
-                in_channels=n_channels, out_channels=n_channels, kernel_size=kernel_size, dilation=4, padding="same"
+                in_channels=n_channels,
+                out_channels=n_channels,
+                kernel_size=kernel_size,
+                dilation=4,
+                padding="same",
             ),
             nn.LeakyReLU(),
             nn.Conv2d(
-                in_channels=n_channels, out_channels=n_channels, kernel_size=kernel_size, dilation=8, padding="same"
+                in_channels=n_channels,
+                out_channels=n_channels,
+                kernel_size=kernel_size,
+                dilation=8,
+                padding="same",
             ),
             nn.LeakyReLU(),
             nn.Conv2d(
-                in_channels=n_channels, out_channels=n_channels, kernel_size=kernel_size, dilation=16, padding="same"
+                in_channels=n_channels,
+                out_channels=n_channels,
+                kernel_size=kernel_size,
+                dilation=16,
+                padding="same",
             ),
             nn.LeakyReLU(),
-            nn.Conv2d(in_channels=n_channels, out_channels=n_channels, kernel_size=kernel_size, padding="same"),
+            nn.Conv2d(
+                in_channels=n_channels,
+                out_channels=n_channels,
+                kernel_size=kernel_size,
+                padding="same",
+            ),
             nn.LeakyReLU(),
             nn.Conv2d(
-                in_channels=n_channels, out_channels=self.n_channels_out, kernel_size=kernel_size, padding="same"
+                in_channels=n_channels,
+                out_channels=n_channels,
+                kernel_size=kernel_size,
+                dilation=2,
+                padding="same",
+            ),
+            nn.LeakyReLU(),
+            nn.Conv2d(
+                in_channels=n_channels,
+                out_channels=n_channels,
+                kernel_size=kernel_size,
+                dilation=4,
+                padding="same",
+            ),
+            nn.LeakyReLU(),
+            nn.Conv2d(
+                in_channels=n_channels,
+                out_channels=n_channels,
+                kernel_size=kernel_size,
+                dilation=8,
+                padding="same",
+            ),
+            nn.LeakyReLU(),
+            nn.Conv2d(
+                in_channels=n_channels,
+                out_channels=n_channels,
+                kernel_size=kernel_size,
+                dilation=16,
+                padding="same",
+            ),
+            nn.LeakyReLU(),
+            nn.Conv2d(
+                in_channels=n_channels,
+                out_channels=n_channels,
+                kernel_size=kernel_size,
+                padding="same",
+            ),
+            nn.LeakyReLU(),
+            nn.Conv2d(
+                in_channels=n_channels,
+                out_channels=self.n_channels_out,
+                kernel_size=kernel_size,
+                padding="same",
             ),
             nn.Sigmoid(),
         ).to(self.device)
@@ -159,3 +234,33 @@ class KeypointDetector(pl.LightningModule):
             self.log("train_flap_loss", flap_loss)
 
         return loss
+
+    def validation_step(self, batch, batch_idx):
+
+        imgs, corner_keypoints, flap_keypoints = batch
+
+        # load here to device to keep mem consumption low, if possible one could also load entire dataset on GPU to speed up training..
+        imgs = imgs.to(self.device)
+
+        with torch.no_grad():
+            ## predict and compute losses
+            corner_heatmaps = self.create_heatmap_batch(imgs[0].shape[1:], corner_keypoints)
+            predicted_heatmaps = self.forward(imgs)  # create heatmaps JIT, is this desirable?
+            predicted_corner_heatmaps = predicted_heatmaps[:, 0, :, :]
+            corner_loss = self.heatmap_loss(predicted_corner_heatmaps, corner_heatmaps)
+            loss = corner_loss
+
+            if self.detect_flap_keypoints:
+                flap_heatmaps = self.create_heatmap_batch(imgs[0].shape[1:], flap_keypoints)
+                predicted_flap_heatmaps = predicted_heatmaps[:, 1, :, :]
+                flap_loss = self.heatmap_loss(predicted_flap_heatmaps, flap_heatmaps)
+                loss += flap_loss
+
+        # TODO: log loss
+        # TODO: extract keypoints and add to metric for visualisation
+        # TODO: select a few images to send overlay to logger
+
+    def on_validation_end(self):
+        # TODO: compute and log AP
+
+        pass
