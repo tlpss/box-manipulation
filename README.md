@@ -11,11 +11,16 @@ The `dataset-generation` folder contains 2 python packages with utils (general a
 
 You can use the script by doing the following steps:
 - download and extract the zip file from Blender
-- symlink this repository under `blender-2.93.X.../2.93/scripts`
 - move to the blender root folder
-- make sure pip is installed ``2.93/python/bin/python3.9 -m ensurepip`
+- make sure pip is installed `2.93/python/bin/python3.9 -m ensurepip`
 - install the packages locally using `2.93/python/bin/python3.9 -m pip install -e 2.93/python/scripts/box-manipulation/data-generation/blender_utils` and vice versa for the other package (TODO -> fix w/ requirements file)
 - run the script with the blender python distribution
+
+Additionally, it is convenient to add the path to blender to your PATH variable in your `.bashrc` file:
+```
+export PATH="$PATH:/home/.../.../blender-2.93.3-linux-x64/"
+```
+This allows you to call `blender` from any directory.
 
 ### Dataset Structure
 
