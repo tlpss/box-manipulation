@@ -1,6 +1,5 @@
 from typing import List, Tuple, Union
 
-import numpy as np
 import torch
 from skimage.feature import peak_local_max
 
@@ -56,13 +55,13 @@ def generate_keypoints_heatmap(
     return img
 
 
-def get_keypoints_from_heatmap(heatmap: np.ndarray, min_keypoint_pixel_distance: int) -> List[List[int]]:
+def get_keypoints_from_heatmap(heatmap: torch.Tensor, min_keypoint_pixel_distance: int) -> List[List[int]]:
     """
     Extracts all keypoints from a heatmap, where each keypoint is defined as being a local maximum within a 2D mask [ -min_pixel_distance, + pixel_distance]^2
     cf https://scikit-image.org/docs/dev/api/skimage.feature.html#skimage.feature.peak_local_max
 
     Args:
-        heatmap (np.ndarray): heatmap image
+        heatmap (torch.Tensor): heatmap image
         min_keypoint_pixel_distance (int): The size of the local mask
 
     Returns:

@@ -1,32 +1,11 @@
-from __future__ import annotations  # allow typing of own class objects
-
-import math
-from dataclasses import dataclass
-from typing import Tuple
+from typing import List, Tuple
 
 import numpy as np
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
-from src.keypoint_utils import generate_keypoints_heatmap
-
-
-@dataclass
-class Keypoint:
-    """A simple class datastructure for Keypoints,
-    dataclass is chosen over named tuple because this class is inherited by other classes
-    """
-
-    u: int
-    v: int
-
-    def l2_distance(self, keypoint: Keypoint):
-        return math.sqrt((self.u - keypoint.u) ** 2 + (self.v - keypoint.v) ** 2)
-
-
-@dataclass
-class DetectedKeypoint(Keypoint):
-    probability: float
+from src.keypoint_utils import generate_keypoints_heatmap, get_keypoints_from_heatmap
+from src.metrics import DetectedKeypoint, Keypoint, KeypointmAPMetric
 
 
 class KeypointDetector(pl.LightningModule):
@@ -52,6 +31,9 @@ class KeypointDetector(pl.LightningModule):
 
         self.detect_flap_keypoints = detect_flap_keypoints
 
+        self.validation_metric = KeypointmAPMetric(heatmap_sigma)  # TODO: set better threshold?
+
+        self.minimal_keypoint_pixel_distance = heatmap_sigma  # TODO: set better threshold
         self.heatmap_sigma = heatmap_sigma
 
         self.n_channels_in = 3
@@ -235,9 +217,9 @@ class KeypointDetector(pl.LightningModule):
 
         return loss
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self, val_batch, batch_idx):
 
-        imgs, corner_keypoints, flap_keypoints = batch
+        imgs, corner_keypoints, flap_keypoints = val_batch
 
         # load here to device to keep mem consumption low, if possible one could also load entire dataset on GPU to speed up training..
         imgs = imgs.to(self.device)
@@ -256,11 +238,37 @@ class KeypointDetector(pl.LightningModule):
                 flap_loss = self.heatmap_loss(predicted_flap_heatmaps, flap_heatmaps)
                 loss += flap_loss
 
-        # TODO: log loss
-        # TODO: extract keypoints and add to metric for visualisation
-        # TODO: select a few images to send overlay to logger
+        # log corner keypoints to AP metric, frame by frame
+        formatted_gt_corner_keypoints = [
+            [Keypoint(int(k[0]), int(k[1])) for k in frame_corner_keypoints]
+            for frame_corner_keypoints in corner_keypoints
+        ]
+        print(f"{formatted_gt_corner_keypoints=}")
+        for i, predicted_corner_frame_heatmap in enumerate(torch.unbind(predicted_corner_heatmaps, 0)):
+            detected_corner_keypoints = self.extract_detected_keypoints(predicted_corner_frame_heatmap)
+            self.validation_metric.update(detected_corner_keypoints, formatted_gt_corner_keypoints[i])
 
-    def on_validation_end(self):
-        # TODO: compute and log AP
+        self.log("validation_loss", loss)
 
-        pass
+    def extract_detected_keypoints(self, heatmap: torch.Tensor) -> List[DetectedKeypoint]:
+        """
+        get keypoints of single class from single frame.
+        """
+
+        detected_keypoints = get_keypoints_from_heatmap(heatmap, self.minimal_keypoint_pixel_distance)
+        keypoint_probabilities = self.compute_keypoint_probability(heatmap, detected_keypoints)
+        detected_keypoints = [
+            DetectedKeypoint(detected_keypoints[i][0], detected_keypoints[i][1], keypoint_probabilities[i])
+            for i in range(len(detected_keypoints))
+        ]
+
+        return detected_keypoints
+
+    def compute_keypoint_probability(self, heatmap: torch.Tensor, detected_keypoints: List[List[int]]) -> List[float]:
+        return [heatmap[k[0]][k[1]].item() for k in detected_keypoints]
+
+    def validation_end(self):
+        ap = self.validation_metric.compute()
+        print(f"{ap}")
+        self.log("validation_ap", ap)
+        self.validation_metric.reset()

@@ -42,3 +42,14 @@ class TestDataModule(unittest.TestCase):
         validation_dataloader = module.train_dataloader()
         self.assertEqual(len(train_dataloader), 1)
         self.assertEqual(len(validation_dataloader), 1)
+
+    def test_batch_format(self):
+        module = BoxKeypointsDataModule(self.dataset, batch_size=1)
+        train_dataloader = module.train_dataloader()
+
+        batch = next(iter(train_dataloader))
+        self.assertEqual(len(batch), 3)
+
+        img, corner_kp, flap_kp = batch
+
+        # TODO: check format of batch components.
