@@ -13,6 +13,11 @@ Later we could consider to write a more general "scene parser" that build a scen
 Generates a single top-down image of a box for a given random seed.
 Stores the image as PNG and stores a json with the keypoints.
 
+This script an only be run with blender:
+```
+blender -b -P box_keypoints_generator_0.py
+```
+
 Currently randomised parameters:
 * box dimensions
 * box flap angles and lengths
