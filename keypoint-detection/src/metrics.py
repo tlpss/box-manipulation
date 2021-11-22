@@ -33,9 +33,9 @@ class ClassifiedKeypoint(DetectedKeypoint):
     DataClass for a classified keypoint, where classified means determining if the detection is a True Positive of False positive,
      with the given treshold distance and the gt keypoints from the frame
 
-    # a hash is required for torch metric
-    # cf https://github.com/PyTorchLightning/metrics/blob/2c8e46f87cb67186bff2c7b94bf1ec37486873d4/torchmetrics/metric.py#L570
-    # unsafe_hash -> dirty fix to allow for hash w/o explictly telling python the object is immutable.
+    a hash is required for torch metric
+    cf https://github.com/PyTorchLightning/metrics/blob/2c8e46f87cb67186bff2c7b94bf1ec37486873d4/torchmetrics/metric.py#L570
+    unsafe_hash -> dirty fix to allow for hash w/o explictly telling python the object is immutable.
     """
 
     threshold_distance: float
@@ -59,6 +59,11 @@ def keypoint_classification(
         List[ClassifiedKeypoint]: Keypoints with TP label.
     """
     classified_keypoints: List[ClassifiedKeypoint] = []
+
+    ground_truth_keypoints = copy.deepcopy(
+        ground_truth_keypoints
+    )  # make deep copy to do local removals (pass-by-reference..)
+
     for detected_keypoint in sorted(detected_keypoints, key=lambda x: x.probability, reverse=True):
         matched = False
         for gt_keypoint in ground_truth_keypoints:
@@ -126,7 +131,6 @@ def calculate_precision_recall(
 
     precision.append(0.0)
     recall.append(1.0)
-
     return precision, recall
 
 
@@ -157,9 +161,14 @@ def calculate_ap_from_pr(precision: List[float], recall: List[float]) -> float:
 
 
 class KeypointmAPMetric(Metric):
+    """torchmetrics-like interface for the Average Precision implementation"""
 
-    # TODO: document and test
     def __init__(self, keypoint_threshold_distance: int, dist_sync_on_step=False):
+        """
+
+        Args:
+            keypoint_threshold_distance (int): distance from ground_truth keypoint that is used to classify keypoint as TP or FP.
+        """
 
         super().__init__(dist_sync_on_step=dist_sync_on_step)
 
@@ -176,10 +185,10 @@ class KeypointmAPMetric(Metric):
         )
 
         self.classified_keypoints += classified_img_keypoints
+
         self.total_ground_truth_keypoints += len(gt_keypoints)
 
     def compute(self):
-        p, r = calculate_precision_recall(self.classified_keypoints, self.total_ground_truth_keypoints)
+        p, r = calculate_precision_recall(self.classified_keypoints, int(self.total_ground_truth_keypoints.cpu()))
         m_ap = calculate_ap_from_pr(p, r)
-
         return m_ap

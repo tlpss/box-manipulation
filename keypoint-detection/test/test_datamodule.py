@@ -1,6 +1,7 @@
 import os
 import unittest
 
+import torch
 from src.datamodule import BoxKeypointsDataModule, BoxKeypointsDataset
 
 
@@ -52,4 +53,9 @@ class TestDataModule(unittest.TestCase):
 
         img, corner_kp, flap_kp = batch
 
-        # TODO: check format of batch components.
+        self.assertIsInstance(img, torch.Tensor)
+        self.assertEquals(img.shape, (1, 3, 256, 256))
+        self.assertIsInstance(corner_kp, torch.Tensor)
+        self.assertEquals(corner_kp.shape, (1, 4, 2))
+        self.assertIsInstance(flap_kp, torch.Tensor)
+        self.assertEquals(flap_kp.shape, (1, 8, 2))

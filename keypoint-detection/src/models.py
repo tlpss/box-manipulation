@@ -16,13 +16,23 @@ class KeypointDetector(pl.LightningModule):
 
     """
 
-    def __init__(self, heatmap_sigma=10, n_channels=32, detect_flap_keypoints=True, minimal_keypoint_pixel_distance: int = None):
+    def __init__(
+        self,
+        heatmap_sigma=10,
+        n_channels=32,
+        detect_flap_keypoints=True,
+        minimal_keypoint_extraction_pixel_distance: int = None,
+        maximal_gt_keypoint_pixel_distance: int = None,
+    ):
         """[summary]
 
         Args:
             heatmap_sigma (int, optional): Sigma of the gaussian heatmaps used to train the detector. Defaults to 10.
             n_channels (int, optional): Number of channels for the CNN layers. Defaults to 32.
             detect_flap_keypoints (bool, optional): Detect flap keypoints in a second channel or use a single channel Detector for box corners only.
+            minimal_keypoint_extraction_pixel_distance (int, optional): the minimal distance (in pixels) between two detected keypoints,
+                                                                        or the size of the local mask in which a keypoint needs to be the local maximum
+            maximal_gt_keypoint_pixel_distance (int, optional): the maximal distance between a gt keypoint and detected keypoint, for the keypoint to be considered a TP
         """
         super().__init__()
         ## No need to manage devices ourselves, pytorch.lightning does all of that.
@@ -30,18 +40,18 @@ class KeypointDetector(pl.LightningModule):
         # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.detect_flap_keypoints = detect_flap_keypoints
-
-
         self.heatmap_sigma = heatmap_sigma
 
-
-        if minimal_keypoint_pixel_distance:
-            self.minimal_keypoint_pixel_distance = minimal_keypoint_pixel_distance
+        if minimal_keypoint_extraction_pixel_distance:
+            self.minimal_keypoint_pixel_distance = minimal_keypoint_extraction_pixel_distance
         else:
             self.minimal_keypoint_pixel_distance = heatmap_sigma
-        
-        self.validation_metric = KeypointmAPMetric(heatmap_sigma)  # TODO: set better threshold?
 
+        if maximal_gt_keypoint_pixel_distance:
+            self.maximal_gt_keypoint_pixel_distance = maximal_gt_keypoint_pixel_distance
+        else:
+            self.maximal_gt_keypoint_pixel_distance = heatmap_sigma
+        self.validation_metric = KeypointmAPMetric(self.maximal_gt_keypoint_pixel_distance)
 
         self.n_channels_in = 3
         self.n_channes = n_channels
@@ -162,27 +172,6 @@ class KeypointDetector(pl.LightningModule):
         optimizer = torch.optim.Adam(self.parameters())
         return optimizer
 
-    def create_heatmap_batch(self, shape: Tuple[int, int], keypoints: torch.Tensor) -> torch.Tensor:
-        """[summary]
-
-        Args:
-            shape (Tuple): H,W
-            keypoints (torch.Tensor): N x K x 3 Tensor with batch of keypoints.
-
-        Returns:
-            (torch.Tensor): N x H x W Tensor with N heatmaps
-        """
-        # TODO: profile to see if the conversion from and to GPU does not introduce a bottleneck
-        # alternative is to create heatmaps on GPU by passing device to the generate_keypoints_heatmap function
-
-        # convert keypoints to cpu to create the heatmaps
-        batch_heatmaps = [
-            generate_keypoints_heatmap(shape, keypoints[i].cpu(), self.heatmap_sigma) for i in range(len(keypoints))
-        ]
-        batch_heatmaps = np.stack(batch_heatmaps, axis=0)
-        batch_heatmaps = torch.from_numpy(batch_heatmaps)
-        return batch_heatmaps.to(self.device)
-
     def heatmap_loss(self, predicted_heatmaps: torch.Tensor, heatmaps: torch.Tensor) -> torch.Tensor:
         """Computes the loss of 2 batches of heatmaps
 
@@ -250,16 +239,50 @@ class KeypointDetector(pl.LightningModule):
             [Keypoint(int(k[0]), int(k[1])) for k in frame_corner_keypoints]
             for frame_corner_keypoints in corner_keypoints
         ]
-        #print(f"{formatted_gt_corner_keypoints=}")
         for i, predicted_corner_frame_heatmap in enumerate(torch.unbind(predicted_corner_heatmaps, 0)):
             detected_corner_keypoints = self.extract_detected_keypoints(predicted_corner_frame_heatmap)
             self.validation_metric.update(detected_corner_keypoints, formatted_gt_corner_keypoints[i])
 
         self.log("validation_loss", loss)
 
+    def validation_epoch_end(self, outputs):
+        ## called on the end of the validation epoch.
+        ap = self.validation_metric.compute()
+        print(f"{ap=}")
+        self.log("validation_ap", ap)
+        self.validation_metric.reset()
+
+    ##################
+    # util functions #
+    ##################
+
+    def create_heatmap_batch(self, shape: Tuple[int, int], keypoints: torch.Tensor) -> torch.Tensor:
+        """[summary]
+
+        Args:
+            shape (Tuple): H,W
+            keypoints (torch.Tensor): N x K x 3 Tensor with batch of keypoints.
+
+        Returns:
+            (torch.Tensor): N x H x W Tensor with N heatmaps
+        """
+        # TODO: profile to see if the conversion from and to GPU does not introduce a bottleneck
+        # alternative is to create heatmaps on GPU by passing device to the generate_keypoints_heatmap function
+
+        # convert keypoints to cpu to create the heatmaps
+        batch_heatmaps = [
+            generate_keypoints_heatmap(shape, keypoints[i].cpu(), self.heatmap_sigma) for i in range(len(keypoints))
+        ]
+        batch_heatmaps = np.stack(batch_heatmaps, axis=0)
+        batch_heatmaps = torch.from_numpy(batch_heatmaps)
+        return batch_heatmaps.to(self.device)
+
     def extract_detected_keypoints(self, heatmap: torch.Tensor) -> List[DetectedKeypoint]:
         """
-        get keypoints of single class from single frame.
+        get keypoints of single channel from single frame.
+
+        Args:
+        heatmap (torch.Tensor) : B x H x W tensor that represents a heatmap.
         """
 
         detected_keypoints = get_keypoints_from_heatmap(heatmap, self.minimal_keypoint_pixel_distance)
@@ -272,10 +295,13 @@ class KeypointDetector(pl.LightningModule):
         return detected_keypoints
 
     def compute_keypoint_probability(self, heatmap: torch.Tensor, detected_keypoints: List[List[int]]) -> List[float]:
-        return [heatmap[k[0]][k[1]].item() for k in detected_keypoints]
+        """Compute probability measure for each detected keypoint on the heatmap
 
-    def validation_epoch_end(self, outputs):
-        ap = self.validation_metric.compute()
-        print(f"{ap}")
-        self.log("validation_ap", ap)
-        self.validation_metric.reset()
+        Args:
+            heatmap (torch.Tensor): Heatmap
+            detected_keypoints (List[List[int]]): List of extreacted keypoints
+
+        Returns:
+            List[float]: [description]
+        """
+        return [heatmap[k[0]][k[1]].item() for k in detected_keypoints]
