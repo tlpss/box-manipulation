@@ -16,7 +16,7 @@ class KeypointDetector(pl.LightningModule):
 
     """
 
-    def __init__(self, heatmap_sigma=10, n_channels=32, detect_flap_keypoints=True):
+    def __init__(self, heatmap_sigma=10, n_channels=32, detect_flap_keypoints=True, minimal_keypoint_pixel_distance: int = None):
         """[summary]
 
         Args:
@@ -31,10 +31,17 @@ class KeypointDetector(pl.LightningModule):
 
         self.detect_flap_keypoints = detect_flap_keypoints
 
+
+        self.heatmap_sigma = heatmap_sigma
+
+
+        if minimal_keypoint_pixel_distance:
+            self.minimal_keypoint_pixel_distance = minimal_keypoint_pixel_distance
+        else:
+            self.minimal_keypoint_pixel_distance = heatmap_sigma
+        
         self.validation_metric = KeypointmAPMetric(heatmap_sigma)  # TODO: set better threshold?
 
-        self.minimal_keypoint_pixel_distance = heatmap_sigma  # TODO: set better threshold
-        self.heatmap_sigma = heatmap_sigma
 
         self.n_channels_in = 3
         self.n_channes = n_channels
@@ -243,7 +250,7 @@ class KeypointDetector(pl.LightningModule):
             [Keypoint(int(k[0]), int(k[1])) for k in frame_corner_keypoints]
             for frame_corner_keypoints in corner_keypoints
         ]
-        print(f"{formatted_gt_corner_keypoints=}")
+        #print(f"{formatted_gt_corner_keypoints=}")
         for i, predicted_corner_frame_heatmap in enumerate(torch.unbind(predicted_corner_heatmaps, 0)):
             detected_corner_keypoints = self.extract_detected_keypoints(predicted_corner_frame_heatmap)
             self.validation_metric.update(detected_corner_keypoints, formatted_gt_corner_keypoints[i])
@@ -267,7 +274,7 @@ class KeypointDetector(pl.LightningModule):
     def compute_keypoint_probability(self, heatmap: torch.Tensor, detected_keypoints: List[List[int]]) -> List[float]:
         return [heatmap[k[0]][k[1]].item() for k in detected_keypoints]
 
-    def validation_end(self):
+    def validation_epoch_end(self, outputs):
         ap = self.validation_metric.compute()
         print(f"{ap}")
         self.log("validation_ap", ap)

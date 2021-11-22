@@ -179,7 +179,6 @@ class KeypointmAPMetric(Metric):
         self.total_ground_truth_keypoints += len(gt_keypoints)
 
     def compute(self):
-
         p, r = calculate_precision_recall(self.classified_keypoints, self.total_ground_truth_keypoints)
         m_ap = calculate_ap_from_pr(p, r)
 
