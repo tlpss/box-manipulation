@@ -1,6 +1,8 @@
 from typing import List, Tuple, Union
 
 import torch
+import torchvision.transforms.functional as TF
+from PIL import Image
 from skimage.feature import peak_local_max
 
 
@@ -71,3 +73,17 @@ def get_keypoints_from_heatmap(heatmap: torch.Tensor, min_keypoint_pixel_distanc
     np_heatmap = heatmap.cpu().numpy()
     keypoints = peak_local_max(np_heatmap, min_distance=min_keypoint_pixel_distance)
     return keypoints[::, ::-1].tolist()  # convert to (u,v) aka (col,row) coord frame from (row,col)
+
+
+def overlay_image_with_heatmap(img: torch.Tensor, heatmap: torch.Tensor, alpha=0.4) -> Image:
+    """
+    Overlays image with the predicted heatmap, which is projected from grayscale to the red channel.
+    """
+    # Create heatmap image in red channel
+    heatmap = torch.cat((heatmap, torch.zeros(2, img.shape[1], img.shape[2])))
+    img = TF.to_pil_image(img)  # assuming your image in x
+    h_img = TF.to_pil_image(heatmap)
+
+    overlay = Image.blend(img, h_img, alpha)
+
+    return overlay

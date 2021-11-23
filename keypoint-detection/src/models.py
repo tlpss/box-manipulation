@@ -1,10 +1,11 @@
-from typing import List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
-from src.keypoint_utils import generate_keypoints_heatmap, get_keypoints_from_heatmap
+import wandb
+from src.keypoint_utils import generate_keypoints_heatmap, get_keypoints_from_heatmap, overlay_image_with_heatmap
 from src.metrics import DetectedKeypoint, Keypoint, KeypointmAPMetric
 
 
@@ -186,8 +187,16 @@ class KeypointDetector(pl.LightningModule):
         # bc @Peter said it does not improve performance too much (KISS)
         return torch.nn.functional.binary_cross_entropy(predicted_heatmaps, heatmaps, reduction="mean")
 
-    def training_step(self, train_batch, batch_idx):
-        imgs, corner_keypoints, flap_keypoints = train_batch
+    def shared_step(self, batch, batch_idx, validate=False) -> Dict[str, Any]:
+        """
+        shared step for training, validation (and testing)
+        computes heatmaps and loss for corners and flaps (if self.detect_flap_keypoints is True)
+
+        returns:
+
+        shared_dict (Dict): a dict with the heatmaps, gt_keypoints and losses
+        """
+        imgs, corner_keypoints, flap_keypoints = batch
 
         # load here to device to keep mem consumption low, if possible one could also load entire dataset on GPU to speed up training..
         imgs = imgs.to(self.device)
@@ -199,57 +208,74 @@ class KeypointDetector(pl.LightningModule):
         corner_loss = self.heatmap_loss(predicted_corner_heatmaps, corner_heatmaps)
         loss = corner_loss
 
+        result_dict = {
+            "loss": loss,
+            "corner_loss": corner_loss,
+            "predicted_heatmaps": predicted_heatmaps.detach(),
+            "corner_keypoints": corner_keypoints,
+        }
+
         if self.detect_flap_keypoints:
             flap_heatmaps = self.create_heatmap_batch(imgs[0].shape[1:], flap_keypoints)
             predicted_flap_heatmaps = predicted_heatmaps[:, 1, :, :]
             flap_loss = self.heatmap_loss(predicted_flap_heatmaps, flap_heatmaps)
             loss += flap_loss
 
-        ## logging
-        self.log("train_corner_loss", corner_loss)
-        self.log("train_loss", loss)
-        if self.detect_flap_keypoints:
-            self.log("train_flap_loss", flap_loss)
+            result_dict.update({"flap_loss": flap_loss, "flap_keypoints": flap_keypoints})
 
-        return loss
+        # log image overlay for first batch
+        # do this here to avoid overhead with image passing, as they are not used anywhere else
+        if validate and batch_idx == 1:
+            for i in range(min(predicted_corner_heatmaps.shape[0], 4)):
+                overlay = overlay_image_with_heatmap(imgs[i], torch.unsqueeze(predicted_corner_heatmaps[i].cpu(), 0))
+                self.logger.experiment.log(
+                    {f"validation_overlay{i}": [wandb.Image(overlay, caption=f"validation_overlay_{i}")]}
+                )
+
+        return result_dict
+
+    def training_step(self, train_batch, batch_idx):
+
+        result_dict = self.shared_step(train_batch, batch_idx)
+
+        # logging
+        self.log("train/corner_loss", result_dict["corner_loss"])
+        self.log("train/loss", result_dict["loss"])
+        if self.detect_flap_keypoints:
+            self.log("train/flap_loss", result_dict["flap_loss"])
+        return result_dict
 
     def validation_step(self, val_batch, batch_idx):
 
-        imgs, corner_keypoints, flap_keypoints = val_batch
+        result_dict = self.shared_step(val_batch, batch_idx, validate=True)
 
-        # load here to device to keep mem consumption low, if possible one could also load entire dataset on GPU to speed up training..
-        imgs = imgs.to(self.device)
-
-        with torch.no_grad():
-            ## predict and compute losses
-            corner_heatmaps = self.create_heatmap_batch(imgs[0].shape[1:], corner_keypoints)
-            predicted_heatmaps = self.forward(imgs)  # create heatmaps JIT, is this desirable?
-            predicted_corner_heatmaps = predicted_heatmaps[:, 0, :, :]
-            corner_loss = self.heatmap_loss(predicted_corner_heatmaps, corner_heatmaps)
-            loss = corner_loss
-
-            if self.detect_flap_keypoints:
-                flap_heatmaps = self.create_heatmap_batch(imgs[0].shape[1:], flap_keypoints)
-                predicted_flap_heatmaps = predicted_heatmaps[:, 1, :, :]
-                flap_loss = self.heatmap_loss(predicted_flap_heatmaps, flap_heatmaps)
-                loss += flap_loss
-
+        ## update AP metric
         # log corner keypoints to AP metric, frame by frame
+        predicted_corner_heatmaps = result_dict["predicted_heatmaps"][:, 0, :, :]
+        gt_corner_keypoints = result_dict["corner_keypoints"]
+
         formatted_gt_corner_keypoints = [
             [Keypoint(int(k[0]), int(k[1])) for k in frame_corner_keypoints]
-            for frame_corner_keypoints in corner_keypoints
+            for frame_corner_keypoints in gt_corner_keypoints
         ]
         for i, predicted_corner_frame_heatmap in enumerate(torch.unbind(predicted_corner_heatmaps, 0)):
             detected_corner_keypoints = self.extract_detected_keypoints(predicted_corner_frame_heatmap)
             self.validation_metric.update(detected_corner_keypoints, formatted_gt_corner_keypoints[i])
 
-        self.log("validation_loss", loss)
+        ## log (defaults to on_epoch, which aggregates the logged values over entire validation set)
+        self.log("validation/epoch_loss", result_dict["loss"])
 
     def validation_epoch_end(self, outputs):
-        ## called on the end of the validation epoch.
-        ap = self.validation_metric.compute()
-        print(f"{ap=}")
-        self.log("validation_ap", ap)
+        """
+        Called on the end of the validation epoch.
+        Used to compute and log the AP metrics.
+        """
+
+        ## TODO: log images of a selected number of box items to wandb
+        # compute ap
+        corner_ap = self.validation_metric.compute()
+        print(f"{corner_ap=}")
+        self.log("validation/corner_ap", corner_ap)
         self.validation_metric.reset()
 
     ##################
