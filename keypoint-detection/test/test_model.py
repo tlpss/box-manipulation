@@ -57,5 +57,3 @@ class TestModel(unittest.TestCase):
             model(imgs)
 
     # TODO: test on GPU if available
-
-    # TODO: test functions to extract keypoints and to calculate metrics

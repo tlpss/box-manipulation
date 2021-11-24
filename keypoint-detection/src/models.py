@@ -1,3 +1,4 @@
+import argparse
 from typing import Any, Dict, List, Tuple
 
 import numpy as np
@@ -24,6 +25,7 @@ class KeypointDetector(pl.LightningModule):
         detect_flap_keypoints=True,
         minimal_keypoint_extraction_pixel_distance: int = None,
         maximal_gt_keypoint_pixel_distance: int = None,
+        **kwargs,
     ):
         """[summary]
 
@@ -34,14 +36,23 @@ class KeypointDetector(pl.LightningModule):
             minimal_keypoint_extraction_pixel_distance (int, optional): the minimal distance (in pixels) between two detected keypoints,
                                                                         or the size of the local mask in which a keypoint needs to be the local maximum
             maximal_gt_keypoint_pixel_distance (int, optional): the maximal distance between a gt keypoint and detected keypoint, for the keypoint to be considered a TP
+            kwargs: Pythonic catch for the other named arguments, used so that we can use a dict with ALL system hyperparameters to initialise the model from this
+                    hyperparamater configuration dict. The alternative is to add a single 'hparams' argument to the init function, but this is imo less readable.
+                    cf https://pytorch-lightning.readthedocs.io/en/stable/common/hyperparameters.html for an overview.
         """
         super().__init__()
         ## No need to manage devices ourselves, pytorch.lightning does all of that.
         ## device can be accessed through self.device if required.
         # device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+        # to add new hyperparameters:
+        # 1. define as named arg in the init (and use them)
+        # 2. add to the argparse method of this module
+        # 3. pass them along when calling the train.py file
+
         self.detect_flap_keypoints = detect_flap_keypoints
         self.heatmap_sigma = heatmap_sigma
+        print(self.heatmap_sigma)
 
         if minimal_keypoint_extraction_pixel_distance:
             self.minimal_keypoint_pixel_distance = minimal_keypoint_extraction_pixel_distance
@@ -162,6 +173,11 @@ class KeypointDetector(pl.LightningModule):
             nn.Sigmoid(),
         ).to(self.device)
 
+        # save hyperparameters to logger, to make sure the model hparams are saved even if
+        # they are not included in the config (i.e. if they are kept at the defaults).
+        # this is for later reference and consistency.
+        self.save_hyperparameters(ignore="**kwargs")
+
     def forward(self, x: torch.Tensor):
         """
         x shape must be (N,C_in,H,W) with N batch size, and C_in number of incoming channels (3)
@@ -211,9 +227,12 @@ class KeypointDetector(pl.LightningModule):
         result_dict = {
             "loss": loss,
             "corner_loss": corner_loss,
-            "predicted_heatmaps": predicted_heatmaps.detach(),
             "corner_keypoints": corner_keypoints,
         }
+
+        # only pass predictions in validate step to avoid overhead in train step.
+        if validate:
+            result_dict.update({"predicted_heatmaps": predicted_heatmaps.detach()})
 
         if self.detect_flap_keypoints:
             flap_heatmaps = self.create_heatmap_batch(imgs[0].shape[1:], flap_keypoints)
@@ -277,6 +296,22 @@ class KeypointDetector(pl.LightningModule):
         print(f"{corner_ap=}")
         self.log("validation/corner_ap", corner_ap)
         self.validation_metric.reset()
+
+    @staticmethod
+    def add_model_argparse_args(parent_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+        """
+        add named arguments from the init function to the parser
+        The default values here are actually duplicates from the init function, but this was for readability (??)
+        """
+        parser = parent_parser.add_argument_group("KeypointDetector")
+
+        parser.add_argument("--heatmap_sigma", type=int, required=False)
+        parser.add_argument("--n_channels", type=int, required=False)
+        parser.add_argument("--detect_flap_keypoints", type=bool, required=False)
+        parser.add_argument("--minimal_keypoint_extract_pixel_distance", type=int, required=False)
+        parser.add_argument("--maximal_gt_keypoint_pixel_distance", type=int, required=False)
+
+        return parent_parser
 
     ##################
     # util functions #
