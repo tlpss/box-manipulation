@@ -310,6 +310,8 @@ class KeypointDetector(pl.LightningModule):
         """
         parser = parent_parser.add_argument_group("KeypointDetector")
 
+        # TODO: add these with inspection to avoid manual duplication!
+
         parser.add_argument("--heatmap_sigma", type=int, required=False)
         parser.add_argument("--n_channels", type=int, required=False)
         parser.add_argument("--detect_flap_keypoints", type=bool, required=False)

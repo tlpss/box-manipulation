@@ -91,16 +91,19 @@ if __name__ == "__main__":
 
     # create the parser, add module arguments and the system arguments
     parser = ArgumentParser()
+    parser = add_system_args(parser)
     parser = KeypointDetector.add_model_argparse_args(parser)
     parser = Trainer.add_argparse_args(parser)
-    parser = add_system_args(parser)
 
     # get parser arguments and filter the specified arguments
     args = vars(parser.parse_args())
-    # remove the unused optional items, which have None as key or are at their default values
-    # this is to avoid cluttering the list of hyperparameters with the unused arguments of the Trainer.
+    # remove the unused optional items without default, which have None as key
+
+    # include those that are at their default values
+    # this is could result in cluttering the list of hyperparameters with the unused arguments of the Trainer, but
     # those of the model are logged anyways (see init of the model)
-    args = {k: v for k, v in args.items() if v is not None and v is not parser.get_default(k)}
+    # however it is done for completeness.
+    args = {k: v for k, v in args.items() if v is not None}  # and v is not parser.get_default(k)}
 
     print(f" argparse arguments ={args=}")
 
