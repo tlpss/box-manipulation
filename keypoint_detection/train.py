@@ -1,21 +1,13 @@
-import os
-import sys
-from typing import Tuple
-
-from pytorch_lightning.trainer.trainer import Trainer
-
-module_path = os.path.abspath(os.path.join(".."))
-if module_path not in sys.path:
-    sys.path.append(module_path)
-
 import inspect
 from argparse import ArgumentParser, Namespace
+from typing import Tuple
 
 import pytorch_lightning as pl
 import wandb
 from pytorch_lightning.loggers import WandbLogger
-from src.datamodule import BoxKeypointsDataModule, BoxKeypointsDataset
-from src.models import KeypointDetector
+from pytorch_lightning.trainer.trainer import Trainer
+
+from keypoint_detection import BoxKeypointsDataModule, BoxKeypointsDataset, KeypointDetector
 
 default_config = {
     ## system params

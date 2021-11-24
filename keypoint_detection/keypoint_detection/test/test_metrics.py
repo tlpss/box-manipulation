@@ -1,7 +1,12 @@
 import unittest
 
-from src.metrics import ClassifiedKeypoint, calculate_ap_from_pr, calculate_precision_recall, keypoint_classification
-from src.models import DetectedKeypoint, Keypoint
+from keypoint_detection.src.metrics import (
+    ClassifiedKeypoint,
+    calculate_ap_from_pr,
+    calculate_precision_recall,
+    keypoint_classification,
+)
+from keypoint_detection.src.models import DetectedKeypoint, Keypoint
 
 
 class TestKeypointClassification(unittest.TestCase):
