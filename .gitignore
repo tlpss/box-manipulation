@@ -1,6 +1,7 @@
 **.egg-info
 **/__pycache__/
 **dataset**
+!**/test_dataset/dataset.json
 **wandb/
 lightning_logs**
 **/checkpoints/

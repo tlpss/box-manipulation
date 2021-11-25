@@ -2,7 +2,8 @@ import os
 import unittest
 
 import torch
-from src.datamodule import BoxKeypointsDataModule, BoxKeypointsDataset
+
+from keypoint_detection.src.datamodule import BoxKeypointsDataModule, BoxKeypointsDataset
 
 
 class TestDataSet(unittest.TestCase):

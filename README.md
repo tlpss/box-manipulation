@@ -7,13 +7,18 @@ Using the AIRO UR3e to open the flaps of a box.
 The dataset generation is done using [Blender v2.93 LTS](https://www.blender.org/download/lts/2-93/)
 
 ### Development Environment
-The `dataset-generation` folder contains 2 python packages with utils (general and blender specific) and a script to generate the dataset using Blender.
+The `dataset-generation` folder contains 3 python packages with utils (general and blender specific) and a script to generate the dataset using Blender.
 
 You can use the script by doing the following steps:
 - download and extract the zip file from Blender
-- move to the blender root folder
-- make sure pip is installed `2.93/python/bin/python3.9 -m ensurepip`
-- install the packages locally using `2.93/python/bin/python3.9 -m pip install -e 2.93/python/scripts/box-manipulation/data-generation/blender_utils` and vice versa for the other package (TODO -> fix w/ requirements file)
+- move to the blender python folder: `cd ~/blender-X.XX.X-linux-x64/X.XX/python/bin`
+- make sure pip is installed `./python3.9 -m ensurepip`
+- install the packages locally using: 
+    - `./python3.9 -m pip install -e ~/box-manipulation/data-generation/blender_utils` 
+    - `./python3.9 -m pip install -e ~/box-manipulation/data-generation/general_utils`
+    - `./python3.9 -m pip install -e ~/box-manipulation/data-generation/box_generators`
+    - `./python3.9 -m pip install scipy
+    - TODO -> fix w/ requirements file, maybe only install box_generators, all others are its deps?
 - run the script with the blender python distribution
 
 Additionally, it is convenient to add the path to blender to your PATH variable in your `.bashrc` file:

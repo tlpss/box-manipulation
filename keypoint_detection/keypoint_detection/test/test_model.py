@@ -3,9 +3,10 @@ import unittest
 
 import pytorch_lightning as pl
 import torch
-from src.datamodule import BoxKeypointsDataModule, BoxKeypointsDataset
-from src.keypoint_utils import generate_keypoints_heatmap
-from src.models import KeypointDetector
+
+from keypoint_detection.src.datamodule import BoxKeypointsDataModule, BoxKeypointsDataset
+from keypoint_detection.src.keypoint_utils import generate_keypoints_heatmap
+from keypoint_detection.src.models import KeypointDetector
 
 
 class TestHeatmapUtils(unittest.TestCase):
@@ -57,5 +58,3 @@ class TestModel(unittest.TestCase):
             model(imgs)
 
     # TODO: test on GPU if available
-
-    # TODO: test functions to extract keypoints and to calculate metrics
