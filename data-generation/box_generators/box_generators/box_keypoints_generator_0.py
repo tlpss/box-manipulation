@@ -50,6 +50,10 @@ def generate_datapoint(output_dir, seed=0):
     scene.render.resolution_y = 256
     scene.render.filepath = image_path
 
+    # Enable GPU
+    bpy.context.preferences.addons["cycles"].preferences.compute_device_type = "OPTIX"
+    scene.cycles.device = "GPU"
+
     cleanup_scene()
 
     # Box creation
@@ -83,7 +87,7 @@ def generate_datapoint(output_dir, seed=0):
     camera.data.lens = 24  # focal length in mm
     look_at([0, 0, 0], camera)
     scene = bpy.context.scene
-    scene.cycles.samples = 64
+    scene.cycles.samples = 128
     scene.camera = camera
 
     # Box keypoints in 2D
