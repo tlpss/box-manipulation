@@ -15,6 +15,7 @@ default_config = {
     "image_dataset_path": "/workspaces/box-manipulation/datasets/box_dataset2",
     "json_dataset_path": "/workspaces/box-manipulation/datasets/box_dataset2/dataset.json",
     "batch_size": 4,
+    "train_val_split_ratio": 0.1,
     # logging info
     "wandb_entity": "airo-box-manipulation",
     "wandb_project": "test-project",
@@ -32,6 +33,7 @@ def add_system_args(parent_parser: ArgumentParser) -> ArgumentParser:
     """
     parser = parent_parser.add_argument_group("Trainer")
     parser.add_argument("--batch_size", required=False, type=int)
+    parser.add_argument("--train_val_split_ratio", required=False, type=float)
     parser.add_argument("--image_dataset_path", required=False, type=str)
     parser.add_argument("--json_dataset_path", required=False, type=str)
 
@@ -68,7 +70,7 @@ def main(hparams: dict) -> Tuple[KeypointDetector, pl.Trainer]:
     pl.seed_everything(hparams["seed"], workers=True)
     model = KeypointDetector(**hparams)
     module = BoxKeypointsDataModule(
-        BoxKeypointsDataset(hparams["json_dataset_path"], hparams["image_dataset_path"]), hparams["batch_size"]
+        BoxKeypointsDataset(hparams["json_dataset_path"], hparams["image_dataset_path"]),hparams["batch_size"], hparams["train_val_split_ratio"]
     )
     wandb_logger = WandbLogger(project=default_config["wandb_project"], entity=default_config["wandb_entity"])
     trainer = create_pl_trainer_from_args(hparams, wandb_logger)

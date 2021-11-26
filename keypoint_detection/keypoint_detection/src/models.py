@@ -311,7 +311,7 @@ class KeypointDetector(pl.LightningModule):
         for maximal_distance, ap in corner_ap_metrics.items():
             self.log(f"validation/corner_ap/d={maximal_distance}", ap)
 
-        mean_corner_ap = sum(corner_ap_metrics.values())/len(corner_ap_metrics.values)
+        mean_corner_ap = sum(corner_ap_metrics.values())/len(corner_ap_metrics.values())
         self.log(f"meanAP", mean_corner_ap) # log top level for wandb hyperparam chart.
         self.validation_metric.reset()
 
