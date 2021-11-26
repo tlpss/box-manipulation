@@ -70,7 +70,9 @@ def main(hparams: dict) -> Tuple[KeypointDetector, pl.Trainer]:
     pl.seed_everything(hparams["seed"], workers=True)
     model = KeypointDetector(**hparams)
     module = BoxKeypointsDataModule(
-        BoxKeypointsDataset(hparams["json_dataset_path"], hparams["image_dataset_path"]),hparams["batch_size"], hparams["train_val_split_ratio"]
+        BoxKeypointsDataset(hparams["json_dataset_path"], hparams["image_dataset_path"]),
+        hparams["batch_size"],
+        hparams["train_val_split_ratio"],
     )
     wandb_logger = WandbLogger(project=default_config["wandb_project"], entity=default_config["wandb_entity"])
     trainer = create_pl_trainer_from_args(hparams, wandb_logger)
