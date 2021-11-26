@@ -3,7 +3,7 @@ from __future__ import annotations  # allow typing of own class objects
 import copy
 import math
 from dataclasses import dataclass
-from typing import Callable, List, Tuple
+from typing import Callable, Dict, List, Tuple
 
 import torch
 from torchmetrics import Metric
@@ -160,7 +160,7 @@ def calculate_ap_from_pr(precision: List[float], recall: List[float]) -> float:
     return ap
 
 
-class KeypointmAPMetric(Metric):
+class KeypointAPMetric(Metric):
     """torchmetrics-like interface for the Average Precision implementation"""
 
     def __init__(self, keypoint_threshold_distance: int, dist_sync_on_step=False):
@@ -192,3 +192,34 @@ class KeypointmAPMetric(Metric):
         p, r = calculate_precision_recall(self.classified_keypoints, int(self.total_ground_truth_keypoints.cpu()))
         m_ap = calculate_ap_from_pr(p, r)
         return m_ap
+
+
+class KeypointAPMetrics(Metric):
+    """
+    Torchmetrics-like interface for calculating average precisions over different keypoint_threshold_distances.
+    Uses KeypointAPMetric class.
+    """
+
+    def __init__(self, keypoint_threshold_distances: List[int], dist_sync_on_step=False):
+        super().__init__(dist_sync_on_step=dist_sync_on_step)
+
+        self.ap_metrics = [KeypointAPMetric(dst, dist_sync_on_step) for dst in keypoint_threshold_distances]
+
+    def update(self, detected_keypoints: List[DetectedKeypoint], gt_keypoints: List[Keypoint]):
+        for metric in self.ap_metrics:
+            metric.update(detected_keypoints, gt_keypoints)
+
+    def compute(self) -> Dict[int, float]:
+        result_dict = {}
+        for metric in self.ap_metrics:
+            result_dict.update({metric.keypoint_threshold_distance: metric.compute()})
+        return result_dict
+
+    def reset(self) -> None:
+        for metric in self.ap_metrics:
+            metric.reset()
+
+
+class KeypointMeanAPMetrics(Metric):
+    # TODO: aggregate KeypointAPMetrics for different cls of keypoints
+    pass

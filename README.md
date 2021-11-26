@@ -13,8 +13,8 @@ You can use the script by doing the following steps:
 - download and extract the zip file from Blender
 - move to the blender python folder: `cd ~/blender-X.XX.X-linux-x64/X.XX/python/bin`
 - make sure pip is installed `./python3.9 -m ensurepip`
-- install the packages locally using: 
-    - `./python3.9 -m pip install -e ~/box-manipulation/data-generation/blender_utils` 
+- install the packages locally using:
+    - `./python3.9 -m pip install -e ~/box-manipulation/data-generation/blender_utils`
     - `./python3.9 -m pip install -e ~/box-manipulation/data-generation/general_utils`
     - `./python3.9 -m pip install -e ~/box-manipulation/data-generation/box_generators`
     - `./python3.9 -m pip install scipy
@@ -51,10 +51,8 @@ example of the json format used in the dataset. Image paths are relative to a ba
 }
 ```
 ## Keypoint Detection
-
-### Development environment
-- run vscode remote development or manually build the Dockerfile in `.devcontainer/docker/JupyterLab/Dockerfile`
-- notebooks
+Keypoint Detector uses Pytorch (Lightning) and Weights and biases for experiment tracking and orchestration.
+see `keypoint_detection package` for more details.
 
 ## Developer Guide
 

@@ -39,7 +39,7 @@ class TestModel(unittest.TestCase):
         """
         run train and evaluation to see if all goes as expected
         """
-        model = KeypointDetector()
+        model = KeypointDetector(maximal_gt_keypoint_pixel_distances=[2, 4, 5])
         TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 
         module = BoxKeypointsDataModule(
@@ -49,7 +49,12 @@ class TestModel(unittest.TestCase):
             2,
             0.5,  # make sure val dataloader has len >= 1
         )
-        trainer = pl.Trainer(max_epochs=2, log_every_n_steps=1)
+        if torch.cuda.is_available:
+            gpus = 1
+        else:
+            gpus = 0
+
+        trainer = pl.Trainer(max_epochs=2, log_every_n_steps=1, gpus=gpus)
         trainer.fit(model, module)
 
         batch = next(iter(module.train_dataloader()))

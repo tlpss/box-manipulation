@@ -1,5 +1,5 @@
 import argparse
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import pytorch_lightning as pl
@@ -12,7 +12,7 @@ from keypoint_detection.src.keypoint_utils import (
     get_keypoints_from_heatmap,
     overlay_image_with_heatmap,
 )
-from keypoint_detection.src.metrics import DetectedKeypoint, Keypoint, KeypointmAPMetric
+from keypoint_detection.src.metrics import DetectedKeypoint, Keypoint, KeypointAPMetrics
 
 
 class KeypointDetector(pl.LightningModule):
@@ -28,8 +28,9 @@ class KeypointDetector(pl.LightningModule):
         heatmap_sigma=10,
         n_channels=32,
         detect_flap_keypoints=True,
+        maximal_gt_keypoint_pixel_distances: Union[str, List[int]] = None,
         minimal_keypoint_extraction_pixel_distance: int = None,
-        maximal_gt_keypoint_pixel_distance: int = None,
+        learning_rate: float = 5e-4,
         **kwargs,
     ):
         """[summary]
@@ -53,22 +54,31 @@ class KeypointDetector(pl.LightningModule):
         # to add new hyperparameters:
         # 1. define as named arg in the init (and use them)
         # 2. add to the argparse method of this module
-        # 3. pass them along when calling the train.py file
-
+        # 3. pass them along when calling the train.py file to override their default value
+        self.learning_rate = learning_rate
         self.detect_flap_keypoints = detect_flap_keypoints
         self.heatmap_sigma = heatmap_sigma
-        print(self.heatmap_sigma)
+
+        if maximal_gt_keypoint_pixel_distances:
+
+            # if str (from argparse, convert to list of ints)
+            if isinstance(maximal_gt_keypoint_pixel_distances, str):
+                maximal_gt_keypoint_pixel_distances = [
+                    int(val) for val in maximal_gt_keypoint_pixel_distances.strip().split(" ")
+                ]
+
+            self.maximal_gt_keypoint_pixel_distances = maximal_gt_keypoint_pixel_distances
+        else:
+            self.maximal_gt_keypoint_pixel_distances = [heatmap_sigma]
 
         if minimal_keypoint_extraction_pixel_distance:
             self.minimal_keypoint_pixel_distance = minimal_keypoint_extraction_pixel_distance
         else:
-            self.minimal_keypoint_pixel_distance = heatmap_sigma
+            self.minimal_keypoint_pixel_distance = min(
+                self.maximal_gt_keypoint_pixel_distances
+            )  # TODO: validate with Rembert if this makes sense!
 
-        if maximal_gt_keypoint_pixel_distance:
-            self.maximal_gt_keypoint_pixel_distance = maximal_gt_keypoint_pixel_distance
-        else:
-            self.maximal_gt_keypoint_pixel_distance = heatmap_sigma
-        self.validation_metric = KeypointmAPMetric(self.maximal_gt_keypoint_pixel_distance)
+        self.validation_metric = KeypointAPMetrics(self.maximal_gt_keypoint_pixel_distances)
 
         self.n_channels_in = 3
         self.n_channes = n_channels
@@ -191,7 +201,7 @@ class KeypointDetector(pl.LightningModule):
         return self.model(x)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters())
+        optimizer = torch.optim.Adam(self.parameters(), self.learning_rate)
         return optimizer
 
     def heatmap_loss(self, predicted_heatmaps: torch.Tensor, heatmaps: torch.Tensor) -> torch.Tensor:
@@ -274,7 +284,7 @@ class KeypointDetector(pl.LightningModule):
         result_dict = self.shared_step(val_batch, batch_idx, validate=True)
 
         ## update AP metric
-        # log corner keypoints to AP metric, frame by frame
+        # log corner keypoints to AP metrics, frame by frame
         predicted_corner_heatmaps = result_dict["predicted_heatmaps"][:, 0, :, :]
         gt_corner_keypoints = result_dict["corner_keypoints"]
 
@@ -295,11 +305,11 @@ class KeypointDetector(pl.LightningModule):
         Used to compute and log the AP metrics.
         """
 
-        ## TODO: log images of a selected number of box items to wandb
-        # compute ap
-        corner_ap = self.validation_metric.compute()
-        print(f"{corner_ap=}")
-        self.log("validation/corner_ap", corner_ap)
+        # compute ap's
+        corner_ap_metrics = self.validation_metric.compute()
+        print(f"{corner_ap_metrics=}")
+        for maximal_distance, ap in corner_ap_metrics.items():
+            self.log(f"validation/corner_ap/d={maximal_distance}", ap)
         self.validation_metric.reset()
 
     @staticmethod
@@ -316,7 +326,8 @@ class KeypointDetector(pl.LightningModule):
         parser.add_argument("--n_channels", type=int, required=False)
         parser.add_argument("--detect_flap_keypoints", type=bool, required=False)
         parser.add_argument("--minimal_keypoint_extract_pixel_distance", type=int, required=False)
-        parser.add_argument("--maximal_gt_keypoint_pixel_distance", type=int, required=False)
+        parser.add_argument("--maximal_gt_keypoint_pixel_distances", type=str, required=False)
+        parser.add_argument("--learning_rate", type=int, required=False)
 
         return parent_parser
 

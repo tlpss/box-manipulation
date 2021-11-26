@@ -26,7 +26,7 @@ to create a wandb sweep (for hyperparam tuning or just conveniently running expe
 - start the desired number of agents (can be on any device that has this package + the requirements) using the sweepID : `wandb agent airo-box-manipulation/<project>/<sweepID>`
 
 #### starting agents on GPULab
-The hacky way (can only create a single container)
+The hacky way:
 - start a jupyterhub instance using the project and the Jupyterlab-pytorch docker image from https://gitlab.ilabt.imec.be/tlips/gpulab
 - pull this repository anywhere on the machine (except the project mount) and navigate to the folder relative to which you specified the
 -  start the agent(s)
@@ -72,7 +72,7 @@ all non-local-module parameters can be given default values in the default_dict 
 1. use default dict
 2. update with arguments from the argparser that are not None (unspecified optional)
 3. init wandb with these local params
-4. fetch (updated if sweep) params from wandb instance (not that this is not stricly required since wandb sweep also adds them as arguments to the script, which means they are already caught by the argparser.., it is however more modular since now the code could be used even without argparser..)
+4. fetch (updated if sweep) params from wandb instance (not that this is not stricly required since wandb sweep also adds them as arguments to the script, which means they are already caught by the argparser.., it is however more modular since now the code could be used even without argparser..; Using the argparsers also makes sure that no typos can occur in the wandb parameters since this would result in an 'unknown argument error' in the argparser)
 
 #### alternatives:
 - specify everything locally in yaml files, however this requires to create new yaml files locally for each specific run
