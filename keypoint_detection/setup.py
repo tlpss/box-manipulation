@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name="keypoint-detection",
+    name="keypoint_detection",
     author="Thomas Lips",
     author_email="thomas.lips@ugent.be",
     version="0.1",

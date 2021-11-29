@@ -3,7 +3,7 @@ import unittest
 
 import torch
 
-from keypoint_detection.src.datamodule import BoxKeypointsDataModule, BoxKeypointsDataset
+from keypoint_detection.src.datamodule import BoxKeypointsDataModule, BoxKeypointsDataset, DatasetPreloader
 
 
 class TestDataSet(unittest.TestCase):
@@ -25,6 +25,18 @@ class TestDataSet(unittest.TestCase):
         item = dataset.__getitem__(0)
         img, corner, flap = item
         self.assertEqual(len(flap), 4)
+
+
+class TestDatasetPreloader(unittest.TestCase):
+    def setUp(self):
+        TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+        self.json_path = os.path.join(TEST_DIR, "test_dataset/dataset.json")
+        self.image_path = os.path.join(TEST_DIR, "test_dataset")
+        self.dataset = BoxKeypointsDataset(self.json_path, self.image_path)
+
+    def test_preloader(self):
+        preloader = DatasetPreloader(self.dataset, 2)
+        self.assertEqual(len(preloader.__getitem__(1)), 3)
 
 
 class TestDataModule(unittest.TestCase):

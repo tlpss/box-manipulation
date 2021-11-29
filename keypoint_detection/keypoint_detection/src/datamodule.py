@@ -73,6 +73,43 @@ class BoxKeypointsDataset(Dataset):
         return image, corner_keypoints, flap_keypoints
 
 
+class DatasetPreloader(Dataset):
+    """
+    Decorator Pattern for a Pytorch Dataset where the dataset is preloaded into memory.
+    This requires the whole dataset to fit into memory..
+
+    There are 2 reasons for using this class:
+    1. acces becomes faster during training
+    2. GPULab throws IOErrors every now and then..
+    """
+
+    def __init__(self, dataset: Dataset, n_io_attempts: int):
+        self.dataset = dataset
+        self.preloaded_dataset = [None] * len(dataset)
+        self._preload(n_io_attempts)
+
+    def __getitem__(self, index):
+        return self.preloaded_dataset[index]
+
+    def __len__(self):
+        return len(self.dataset)
+
+    def _preload(self, io_attempts: int):
+        """
+        Attempt to load entire dataset into memory
+        """
+        for i in range(len(self)):
+            for j in range(io_attempts):
+                try:
+                    self.preloaded_dataset[i] = self.dataset[i]
+                    break
+                except IOError:
+                    print(f"caught IOError in {j}th attempt for item {i}")
+
+                if j == io_attempts - 1:
+                    raise IOError(f"Could not preload item with index {i}")
+
+
 class BoxKeypointsDataModule(pl.LightningDataModule):
     def __init__(self, dataset: BoxKeypointsDataset, batch_size: int = 4, validation_split_ratio=0.1):
         super().__init__()
