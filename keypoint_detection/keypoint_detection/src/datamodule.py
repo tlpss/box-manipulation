@@ -8,7 +8,7 @@ import tqdm
 from skimage import io
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import ToTensor
-
+import random
 
 class BoxKeypointsDataset(Dataset):
     """
@@ -98,7 +98,7 @@ class DatasetIOCatcher(Dataset):
                 print(
                     f"caught IOError in {j}th attempt for item {index}, sleeping for {sleep_time_in_seconds} seconds"
                 )
-                time.sleep(sleep_time_in_seconds)
+                time.sleep(max(random.gauss(sleep_time_in_seconds,j), 0))
                 sleep_time_in_seconds *= 2
 
     def __len__(self):
