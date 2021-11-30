@@ -3,6 +3,7 @@ import os
 
 import pytorch_lightning as pl
 import torch
+import tqdm
 from skimage import io
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import ToTensor
@@ -98,7 +99,7 @@ class DatasetPreloader(Dataset):
         """
         Attempt to load entire dataset into memory
         """
-        for i in range(len(self)):
+        for i in tqdm.trange(len(self)):
             for j in range(io_attempts):
                 try:
                     self.preloaded_dataset[i] = self.dataset[i]
