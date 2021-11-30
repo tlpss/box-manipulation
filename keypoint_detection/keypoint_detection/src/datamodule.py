@@ -1,5 +1,6 @@
 import json
 import os
+import random
 import time
 
 import pytorch_lightning as pl
@@ -8,7 +9,7 @@ import tqdm
 from skimage import io
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import ToTensor
-import random
+
 
 class BoxKeypointsDataset(Dataset):
     """
@@ -95,10 +96,9 @@ class DatasetIOCatcher(Dataset):
                 if j == self.n_io_attempts - 1:
                     raise IOError(f"Could not preload item with index {index}")
 
-                print(
-                    f"caught IOError in {j}th attempt for item {index}, sleeping for {sleep_time_in_seconds} seconds"
-                )
-                time.sleep(max(random.gauss(sleep_time_in_seconds,j), 0))
+                sleep_time = max(random.gauss(sleep_time_in_seconds, j), 0)
+                print(f"caught IOError in {j}th attempt for item {index}, sleeping for {sleep_time} seconds")
+                time.sleep(sleep_time)
                 sleep_time_in_seconds *= 2
 
     def __len__(self):
@@ -155,11 +155,11 @@ class BoxKeypointsDataModule(pl.LightningDataModule):
         )
 
     def train_dataloader(self):
-        dataloader = DataLoader(self.train_dataset, self.batch_size, shuffle=True, num_workers=2)
+        dataloader = DataLoader(self.train_dataset, self.batch_size, shuffle=True, num_workers=1)
         return dataloader
 
     def val_dataloader(self):
-        dataloader = DataLoader(self.validation_dataset, self.batch_size, shuffle=True, num_workers=2)
+        dataloader = DataLoader(self.validation_dataset, self.batch_size, shuffle=True, num_workers=1)
         return dataloader
 
     def test_dataloader(self):
