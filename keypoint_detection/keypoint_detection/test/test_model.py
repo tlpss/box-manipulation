@@ -49,7 +49,7 @@ class TestModel(unittest.TestCase):
             2,
             0.5,  # make sure val dataloader has len >= 1
         )
-        if torch.cuda.is_available:
+        if torch.cuda.is_available():
             gpus = 1
         else:
             gpus = 0
