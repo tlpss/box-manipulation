@@ -5,8 +5,8 @@ import numpy as np
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
-
 import wandb
+
 from keypoint_detection.src.keypoint_utils import (
     generate_keypoints_heatmap,
     get_keypoints_from_heatmap,
