@@ -74,6 +74,31 @@ class BoxKeypointsDataset(Dataset):
         return image, corner_keypoints, flap_keypoints
 
 
+class DatasetIOCatcher(Dataset):
+    """
+    This Decorator for a Pytorch Dataset performs n attempts to load the dataset item, in an attempt
+    to overcome IOErrors on the GPULab. This does not require the entire dataset to be in memory.
+    """
+
+    def __init__(self, dataset: Dataset, n_io_attempts: int):
+        self.dataset = dataset
+        self.n_io_attempts = n_io_attempts
+
+    def __getitem__(self, index):
+        for j in range(self.n_io_attempts):
+            try:
+                item = self.dataset[index]
+                return item
+            except IOError:
+                print(f"caught IOError in {j}th attempt for item {index}")
+
+            if j == self.n_io_attempts - 1:
+                raise IOError(f"Could not preload item with index {index}")
+
+    def __len__(self):
+        return len(self.dataset)
+
+
 class DatasetPreloader(Dataset):
     """
     Decorator Pattern for a Pytorch Dataset where the dataset is preloaded into memory.

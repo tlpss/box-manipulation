@@ -7,7 +7,8 @@ from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.trainer.trainer import Trainer
 
 import wandb
-from keypoint_detection import BoxKeypointsDataModule, BoxKeypointsDataset, DatasetPreloader, KeypointDetector
+from keypoint_detection import BoxKeypointsDataModule, BoxKeypointsDataset, KeypointDetector
+from keypoint_detection.src.datamodule import DatasetIOCatcher
 
 default_config = {
     ## system params
@@ -71,8 +72,8 @@ def main(hparams: dict) -> Tuple[KeypointDetector, pl.Trainer]:
     model = KeypointDetector(**hparams)
 
     print("(loading dataset into memory")
-    preloaded_dataset = DatasetPreloader(
-        BoxKeypointsDataset(hparams["json_dataset_path"], hparams["image_dataset_path"]), 2
+    preloaded_dataset = DatasetIOCatcher(
+        BoxKeypointsDataset(hparams["json_dataset_path"], hparams["image_dataset_path"]), 3
     )
     print("dataset loaded")
 
