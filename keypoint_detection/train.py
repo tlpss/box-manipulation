@@ -71,14 +71,13 @@ def main(hparams: dict) -> Tuple[KeypointDetector, pl.Trainer]:
     pl.seed_everything(hparams["seed"], workers=True)
     model = KeypointDetector(**hparams)
 
-    print("(loading dataset into memory")
-    preloaded_dataset = DatasetIOCatcher(
-        BoxKeypointsDataset(hparams["json_dataset_path"], hparams["image_dataset_path"]), 3
+    dataset = DatasetIOCatcher(
+        BoxKeypointsDataset(hparams["json_dataset_path"], hparams["image_dataset_path"]), 15
     )
     print("dataset loaded")
 
     module = BoxKeypointsDataModule(
-        preloaded_dataset,
+        dataset,
         hparams["batch_size"],
         hparams["train_val_split_ratio"],
     )
