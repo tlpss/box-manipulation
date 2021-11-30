@@ -1,5 +1,6 @@
 import json
 import os
+import time
 
 import pytorch_lightning as pl
 import torch
@@ -85,15 +86,20 @@ class DatasetIOCatcher(Dataset):
         self.n_io_attempts = n_io_attempts
 
     def __getitem__(self, index):
+        sleep_time_in_seconds = 1
         for j in range(self.n_io_attempts):
             try:
                 item = self.dataset[index]
                 return item
             except IOError:
-                print(f"caught IOError in {j}th attempt for item {index}")
+                if j == self.n_io_attempts - 1:
+                    raise IOError(f"Could not preload item with index {index}")
 
-            if j == self.n_io_attempts - 1:
-                raise IOError(f"Could not preload item with index {index}")
+                print(
+                    f"caught IOError in {j}th attempt for item {index}, sleeping for {sleep_time_in_seconds} seconds"
+                )
+                time.sleep(sleep_time_in_seconds)
+                sleep_time_in_seconds *= 2
 
     def __len__(self):
         return len(self.dataset)

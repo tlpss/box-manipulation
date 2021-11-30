@@ -71,9 +71,7 @@ def main(hparams: dict) -> Tuple[KeypointDetector, pl.Trainer]:
     pl.seed_everything(hparams["seed"], workers=True)
     model = KeypointDetector(**hparams)
 
-    dataset = DatasetIOCatcher(
-        BoxKeypointsDataset(hparams["json_dataset_path"], hparams["image_dataset_path"]), 15
-    )
+    dataset = DatasetIOCatcher(BoxKeypointsDataset(hparams["json_dataset_path"], hparams["image_dataset_path"]), 15)
     print("dataset loaded")
 
     module = BoxKeypointsDataModule(
