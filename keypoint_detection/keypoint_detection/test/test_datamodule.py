@@ -1,9 +1,10 @@
 import os
 import unittest
 
+import numpy as np
 import torch
 
-from keypoint_detection.src.datamodule import BoxKeypointsDataModule, BoxKeypointsDataset, DatasetPreloader
+from keypoint_detection.src.datamodule import BoxDatasetPreloaded, BoxKeypointsDataModule, BoxKeypointsDataset
 
 
 class TestDataSet(unittest.TestCase):
@@ -35,8 +36,10 @@ class TestDatasetPreloader(unittest.TestCase):
         self.dataset = BoxKeypointsDataset(self.json_path, self.image_path)
 
     def test_preloader(self):
-        preloader = DatasetPreloader(self.dataset, 2)
-        self.assertEqual(len(preloader.__getitem__(1)), 3)
+        preloadeded_dataset = BoxDatasetPreloaded(self.json_path, self.image_path, n_io_attempts=2)
+        self.assertEqual(len(preloadeded_dataset.__getitem__(1)), 3)
+        self.assertIsNotNone(preloadeded_dataset.preloaded_images[0])
+        self.assertTrue(isinstance(preloadeded_dataset.preloaded_images[0], np.ndarray))
 
 
 class TestDataModule(unittest.TestCase):
