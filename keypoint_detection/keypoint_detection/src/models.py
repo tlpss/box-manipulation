@@ -283,18 +283,19 @@ class KeypointDetector(pl.LightningModule):
 
         result_dict = self.shared_step(val_batch, batch_idx, validate=True)
 
-        ## update AP metric
-        # log corner keypoints to AP metrics, frame by frame
-        predicted_corner_heatmaps = result_dict["predicted_heatmaps"][:, 0, :, :]
-        gt_corner_keypoints = result_dict["corner_keypoints"]
+        if self.current_epoch > 5 and self.current_epoch % 3 == 0:
+            ## update AP metric
+            # log corner keypoints to AP metrics, frame by frame
+            predicted_corner_heatmaps = result_dict["predicted_heatmaps"][:, 0, :, :]
+            gt_corner_keypoints = result_dict["corner_keypoints"]
 
-        formatted_gt_corner_keypoints = [
-            [Keypoint(int(k[0]), int(k[1])) for k in frame_corner_keypoints]
-            for frame_corner_keypoints in gt_corner_keypoints
-        ]
-        for i, predicted_corner_frame_heatmap in enumerate(torch.unbind(predicted_corner_heatmaps, 0)):
-            detected_corner_keypoints = self.extract_detected_keypoints(predicted_corner_frame_heatmap)
-            self.validation_metric.update(detected_corner_keypoints, formatted_gt_corner_keypoints[i])
+            formatted_gt_corner_keypoints = [
+                [Keypoint(int(k[0]), int(k[1])) for k in frame_corner_keypoints]
+                for frame_corner_keypoints in gt_corner_keypoints
+            ]
+            for i, predicted_corner_frame_heatmap in enumerate(torch.unbind(predicted_corner_heatmaps, 0)):
+                detected_corner_keypoints = self.extract_detected_keypoints(predicted_corner_frame_heatmap)
+                self.validation_metric.update(detected_corner_keypoints, formatted_gt_corner_keypoints[i])
 
         ## log (defaults to on_epoch, which aggregates the logged values over entire validation set)
         self.log("validation/epoch_loss", result_dict["loss"])
@@ -305,15 +306,16 @@ class KeypointDetector(pl.LightningModule):
         Used to compute and log the AP metrics.
         """
 
-        # compute ap's
-        corner_ap_metrics = self.validation_metric.compute()
-        print(f"{corner_ap_metrics=}")
-        for maximal_distance, ap in corner_ap_metrics.items():
-            self.log(f"validation/corner_ap/d={maximal_distance}", ap)
+        if self.current_epoch > 5 and self.current_epoch % 3 == 0:
+            # compute ap's
+            corner_ap_metrics = self.validation_metric.compute()
+            print(f"{corner_ap_metrics=}")
+            for maximal_distance, ap in corner_ap_metrics.items():
+                self.log(f"validation/corner_ap/d={maximal_distance}", ap)
 
-        mean_corner_ap = sum(corner_ap_metrics.values()) / len(corner_ap_metrics.values())
-        self.log(f"meanAP", mean_corner_ap)  # log top level for wandb hyperparam chart.
-        self.validation_metric.reset()
+            mean_corner_ap = sum(corner_ap_metrics.values()) / len(corner_ap_metrics.values())
+            self.log(f"meanAP", mean_corner_ap)  # log top level for wandb hyperparam chart.
+            self.validation_metric.reset()
 
     @staticmethod
     def add_model_argparse_args(parent_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
