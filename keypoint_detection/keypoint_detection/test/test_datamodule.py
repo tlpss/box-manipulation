@@ -40,6 +40,7 @@ class TestDatasetPreloader(unittest.TestCase):
         self.assertEqual(len(preloadeded_dataset.__getitem__(1)), 3)
         self.assertIsNotNone(preloadeded_dataset.preloaded_images[0])
         self.assertTrue(isinstance(preloadeded_dataset.preloaded_images[0], np.ndarray))
+        self.assertEqual(preloadeded_dataset.preloaded_images[0].dtype, np.uint8)
 
 
 class TestDataModule(unittest.TestCase):
