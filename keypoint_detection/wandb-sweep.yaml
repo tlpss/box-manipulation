@@ -30,7 +30,7 @@ parameters:
 
   detect_flap_keypoints:
     value: false
- 
+
   heatmap_sigma:
     values:
     min: 4
@@ -48,6 +48,6 @@ parameters:
     - 8
     - 16
     - 32
-  
+
 
 program: train.py

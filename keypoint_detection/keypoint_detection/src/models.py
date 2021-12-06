@@ -266,7 +266,7 @@ class KeypointDetector(pl.LightningModule):
             transform = torchvision.transforms.ToTensor()
 
             # corners
-            overlayed__corner_predictions = torch.stack(
+            overlayed_corner_predicted_heatmap = torch.stack(
                 [
                     transform(
                         overlay_image_with_heatmap(imgs[i], torch.unsqueeze(predicted_corner_heatmaps[i].cpu(), 0))
@@ -280,7 +280,31 @@ class KeypointDetector(pl.LightningModule):
                     for i in range(num_images)
                 ]
             )
-            corner_images = torch.cat([overlayed__corner_predictions, overlayed_corner_gt])
+
+            overlayed_corner_predicted_keypoints = torch.stack(
+                [
+                    transform(
+                        overlay_image_with_heatmap(
+                            imgs[i],
+                            torch.unsqueeze(
+                                generate_keypoints_heatmap(
+                                    imgs.shape[-2:],
+                                    get_keypoints_from_heatmap(
+                                        predicted_corner_heatmaps[i].cpu(), self.minimal_keypoint_pixel_distance
+                                    ),
+                                    sigma=4,
+                                ),
+                                0,
+                            ),
+                        )
+                    )
+                    for i in range(num_images)
+                ]
+            )
+            corner_images = torch.cat(
+                [overlayed_corner_predicted_heatmap, overlayed_corner_predicted_keypoints, overlayed_corner_gt]
+            )
+
             grid = torchvision.utils.make_grid(corner_images, nrow=num_images)
             self.logger.experiment.log(
                 {f"corner_keypoints": wandb.Image(grid, caption="top: predictions, bottom: gt")}
