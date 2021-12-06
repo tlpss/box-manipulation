@@ -8,7 +8,7 @@ import json
 import os
 import sys
 
-from box_generators import box_keypoints_generator_0
+from box_generators import box_keypoints_generator_1
 
 
 def generate_dataset(amount_of_samples, datasets_dir):
@@ -17,7 +17,7 @@ def generate_dataset(amount_of_samples, datasets_dir):
     os.makedirs(output_dir)
 
     for i in range(amount_of_samples):
-        box_keypoints_generator_0.generate_datapoint(output_dir, i)
+        box_keypoints_generator_1.generate_datapoint(output_dir, i)
 
         dataset = []
 
