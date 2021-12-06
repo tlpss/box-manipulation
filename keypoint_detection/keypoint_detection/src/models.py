@@ -6,8 +6,8 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torchvision
-
 import wandb
+
 from keypoint_detection.src.keypoint_utils import (
     generate_keypoints_heatmap,
     get_keypoints_from_heatmap,
@@ -331,7 +331,7 @@ class KeypointDetector(pl.LightningModule):
 
         result_dict = self.shared_step(val_batch, batch_idx, validate=True)
 
-        if self.current_epoch >=3 and self.current_epoch % 3 == 0:
+        if self.current_epoch >= 3 and self.current_epoch % 3 == 0:
             ## update AP metric
             # log corner keypoints to AP metrics, frame by frame
             predicted_corner_heatmaps = result_dict["predicted_heatmaps"][:, 0, :, :]
