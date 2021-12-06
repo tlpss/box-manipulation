@@ -5,8 +5,9 @@ import numpy as np
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
-import wandb
+import torchvision
 
+import wandb
 from keypoint_detection.src.keypoint_utils import (
     generate_keypoints_heatmap,
     get_keypoints_from_heatmap,
@@ -240,7 +241,6 @@ class KeypointDetector(pl.LightningModule):
         loss = corner_loss
 
         result_dict = {
-            "loss": loss,
             "corner_loss": corner_loss,
             "corner_keypoints": corner_keypoints,
         }
@@ -257,14 +257,38 @@ class KeypointDetector(pl.LightningModule):
 
             result_dict.update({"flap_loss": flap_loss, "flap_keypoints": flap_keypoints})
 
+        result_dict.update({"loss": loss})
+
         # log image overlay for first batch
         # do this here to avoid overhead with image passing, as they are not used anywhere else
         if validate and batch_idx == 1:
-            for i in range(min(predicted_corner_heatmaps.shape[0], 4)):
-                overlay = overlay_image_with_heatmap(imgs[i], torch.unsqueeze(predicted_corner_heatmaps[i].cpu(), 0))
-                self.logger.experiment.log(
-                    {f"validation_overlay{i}": [wandb.Image(overlay, caption=f"validation_overlay_{i}")]}
-                )
+            num_images = min(predicted_corner_heatmaps.shape[0], 4)
+            transform = torchvision.transforms.ToTensor()
+
+            # corners
+            overlayed__corner_predictions = torch.stack(
+                [
+                    transform(
+                        overlay_image_with_heatmap(imgs[i], torch.unsqueeze(predicted_corner_heatmaps[i].cpu(), 0))
+                    )
+                    for i in range(num_images)
+                ]
+            )
+            overlayed_corner_gt = torch.stack(
+                [
+                    transform(overlay_image_with_heatmap(imgs[i], torch.unsqueeze(corner_heatmaps[i].cpu(), 0)))
+                    for i in range(num_images)
+                ]
+            )
+            corner_images = torch.cat([overlayed__corner_predictions, overlayed_corner_gt])
+            grid = torchvision.utils.make_grid(corner_images, nrow=num_images)
+            self.logger.experiment.log(
+                {f"corner_keypoints": wandb.Image(grid, caption="top: predictions, bottom: gt")}
+            )
+
+            if self.detect_flap_keypoints:
+                # TODO:
+                pass
 
         return result_dict
 

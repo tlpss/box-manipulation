@@ -81,7 +81,7 @@ def overlay_image_with_heatmap(img: torch.Tensor, heatmap: torch.Tensor, alpha=0
     """
     # Create heatmap image in red channel
     heatmap = torch.cat((heatmap, torch.zeros(2, img.shape[1], img.shape[2])))
-    img = TF.to_pil_image(img.detach().cpu())  # assuming your image in x
+    img = TF.to_pil_image(img.detach().cpu())
     h_img = TF.to_pil_image(heatmap)
 
     overlay = Image.blend(img, h_img, alpha)
