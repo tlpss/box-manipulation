@@ -68,7 +68,7 @@ class BoxKeypointsDataset(ImageDataset):
         Note: only works for squared Images!
         """
         keypoints *= image_shape
-        keypoints[:, -1] = image_shape - keypoints[:, -1]
+        keypoints[:, 1] = image_shape - keypoints[:, 1]
         return keypoints
 
     def __getitem__(self, index):
@@ -158,7 +158,7 @@ class BoxDatasetPreloaded(BoxDatasetIOCatcher):
         """
         load images into memory as np.ndarrays.
         Choice to load them as np.ndarrays is because pytorch uses float32 for each value whereas
-        the original values are only 8 bit ints.
+        the original values are only 8 bit ints, so this is a 4times increase in size..
         """
 
         print("preloading dataset images")
