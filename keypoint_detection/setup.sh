@@ -14,4 +14,5 @@ fi
 git clone https://github.com/tlpss/box-manipulation.git
 
 # install keypoint_detection package
-pip install box-manipulation/keypoint_detection
+# install in dev mode to enable symlinks
+pip install -e  box-manipulation/keypoint_detection
