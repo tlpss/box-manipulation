@@ -13,12 +13,15 @@ parameters:
   log_every_n_steps:
     value: 20
   max_epochs:
-    value: 15
+    value: 13
 # dataset
   image_dataset_path:
     value: /project/datasets/box_dataset_25_11
   json_dataset_path:
     value: /project/datasets/box_dataset_25_11/dataset.json
+
+  # auto_scale_batch_size:
+  # value: true
   batch_size:
     values:
     - 8
@@ -44,10 +47,8 @@ parameters:
     - 5
   n_channels:
     values:
-    - 4
-    - 8
-    - 16
     - 32
+    - 64
 
 
 program: train.py

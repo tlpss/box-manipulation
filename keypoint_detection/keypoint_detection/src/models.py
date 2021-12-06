@@ -262,7 +262,7 @@ class KeypointDetector(pl.LightningModule):
         # log image overlay for first batch
         # do this here to avoid overhead with image passing, as they are not used anywhere else
         if validate and batch_idx == 1:
-            num_images = min(predicted_corner_heatmaps.shape[0], 4)
+            num_images = min(predicted_corner_heatmaps.shape[0], 6)
             transform = torchvision.transforms.ToTensor()
 
             # corners
@@ -331,7 +331,7 @@ class KeypointDetector(pl.LightningModule):
 
         result_dict = self.shared_step(val_batch, batch_idx, validate=True)
 
-        if self.current_epoch > 5 and self.current_epoch % 3 == 0:
+        if self.current_epoch >=3 and self.current_epoch % 3 == 0:
             ## update AP metric
             # log corner keypoints to AP metrics, frame by frame
             predicted_corner_heatmaps = result_dict["predicted_heatmaps"][:, 0, :, :]
