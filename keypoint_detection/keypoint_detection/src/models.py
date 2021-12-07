@@ -6,8 +6,8 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torchvision
-import wandb
 
+import wandb
 from keypoint_detection.src.keypoint_utils import (
     generate_keypoints_heatmap,
     get_keypoints_from_heatmap,
@@ -60,6 +60,9 @@ class KeypointDetector(pl.LightningModule):
         self.detect_flap_keypoints = detect_flap_keypoints
         self.heatmap_sigma = heatmap_sigma
 
+        self.ap_epoch_start = 2
+        self.ap_epoch_freq = 2
+
         if maximal_gt_keypoint_pixel_distances:
 
             # if str (from argparse, convert to list of ints)
@@ -79,7 +82,7 @@ class KeypointDetector(pl.LightningModule):
                 self.maximal_gt_keypoint_pixel_distances
             )  # TODO: validate with Rembert if this makes sense!
 
-        self.validation_metric = KeypointAPMetrics(self.maximal_gt_keypoint_pixel_distances)
+        self.corner_validation_metric = KeypointAPMetrics(self.maximal_gt_keypoint_pixel_distances)
 
         self.n_channels_in = 3
         self.n_channes = n_channels
@@ -259,60 +262,11 @@ class KeypointDetector(pl.LightningModule):
 
         result_dict.update({"loss": loss})
 
-        # log image overlay for first batch
-        # do this here to avoid overhead with image passing, as they are not used anywhere else
+        # visualization
         if validate and batch_idx == 1:
-            num_images = min(predicted_corner_heatmaps.shape[0], 6)
-            transform = torchvision.transforms.ToTensor()
-
-            # corners
-            overlayed_corner_predicted_heatmap = torch.stack(
-                [
-                    transform(
-                        overlay_image_with_heatmap(imgs[i], torch.unsqueeze(predicted_corner_heatmaps[i].cpu(), 0))
-                    )
-                    for i in range(num_images)
-                ]
-            )
-            overlayed_corner_gt = torch.stack(
-                [
-                    transform(overlay_image_with_heatmap(imgs[i], torch.unsqueeze(corner_heatmaps[i].cpu(), 0)))
-                    for i in range(num_images)
-                ]
-            )
-
-            overlayed_corner_predicted_keypoints = torch.stack(
-                [
-                    transform(
-                        overlay_image_with_heatmap(
-                            imgs[i],
-                            torch.unsqueeze(
-                                generate_keypoints_heatmap(
-                                    imgs.shape[-2:],
-                                    get_keypoints_from_heatmap(
-                                        predicted_corner_heatmaps[i].cpu(), self.minimal_keypoint_pixel_distance
-                                    ),
-                                    sigma=4,
-                                ),
-                                0,
-                            ),
-                        )
-                    )
-                    for i in range(num_images)
-                ]
-            )
-            corner_images = torch.cat(
-                [overlayed_corner_predicted_heatmap, overlayed_corner_predicted_keypoints, overlayed_corner_gt]
-            )
-
-            grid = torchvision.utils.make_grid(corner_images, nrow=num_images)
-            self.logger.experiment.log(
-                {f"corner_keypoints": wandb.Image(grid, caption="top: predictions, bottom: gt")}
-            )
-
+            self.visualize_predictions(imgs, predicted_corner_heatmaps, corner_heatmaps)
             if self.detect_flap_keypoints:
-                # TODO:
-                pass
+                self.visualize_predictions(imgs, predicted_flap_heatmaps, flap_heatmaps, keypoint_class="flap")
 
         return result_dict
 
@@ -331,19 +285,14 @@ class KeypointDetector(pl.LightningModule):
 
         result_dict = self.shared_step(val_batch, batch_idx, validate=True)
 
-        if self.current_epoch >= 3 and self.current_epoch % 3 == 0:
-            ## update AP metric
-            # log corner keypoints to AP metrics, frame by frame
+        if self.is_ap_epoch():
+            # update corner AP metric
             predicted_corner_heatmaps = result_dict["predicted_heatmaps"][:, 0, :, :]
             gt_corner_keypoints = result_dict["corner_keypoints"]
+            self.update_ap_metrics(self, predicted_corner_heatmaps, gt_corner_keypoints, self.corner_validation_metric)
 
-            formatted_gt_corner_keypoints = [
-                [Keypoint(int(k[0]), int(k[1])) for k in frame_corner_keypoints]
-                for frame_corner_keypoints in gt_corner_keypoints
-            ]
-            for i, predicted_corner_frame_heatmap in enumerate(torch.unbind(predicted_corner_heatmaps, 0)):
-                detected_corner_keypoints = self.extract_detected_keypoints(predicted_corner_frame_heatmap)
-                self.validation_metric.update(detected_corner_keypoints, formatted_gt_corner_keypoints[i])
+            if self.detect_flap_keypoints:
+                pass
 
         ## log (defaults to on_epoch, which aggregates the logged values over entire validation set)
         self.log("validation/epoch_loss", result_dict["loss"])
@@ -354,16 +303,77 @@ class KeypointDetector(pl.LightningModule):
         Used to compute and log the AP metrics.
         """
 
-        if self.current_epoch > 5 and self.current_epoch % 3 == 0:
+        if self.is_ap_epoch():
             # compute ap's
-            corner_ap_metrics = self.validation_metric.compute()
+            corner_ap_metrics = self.corner_validation_metric.compute()
             print(f"{corner_ap_metrics=}")
             for maximal_distance, ap in corner_ap_metrics.items():
                 self.log(f"validation/corner_ap/d={maximal_distance}", ap)
 
             mean_corner_ap = sum(corner_ap_metrics.values()) / len(corner_ap_metrics.values())
+
             self.log(f"meanAP", mean_corner_ap)  # log top level for wandb hyperparam chart.
-            self.validation_metric.reset()
+            self.corner_validation_metric.reset()
+
+    ##################
+    # util functions #
+    ##################
+    def visualize_predictions(
+        self,
+        imgs: torch.Tensor,
+        predicted_heatmaps: torch.Tensor,
+        gt_heatmaps: torch.Tensor,
+        keypoint_class: str = "corner",
+    ):
+        num_images = min(predicted_heatmaps.shape[0], 6)
+        transform = torchvision.transforms.ToTensor()
+
+        # corners
+        overlayed_corner_predicted_heatmap = torch.stack(
+            [
+                transform(overlay_image_with_heatmap(imgs[i], torch.unsqueeze(predicted_heatmaps[i].cpu(), 0)))
+                for i in range(num_images)
+            ]
+        )
+        overlayed_corner_gt = torch.stack(
+            [
+                transform(overlay_image_with_heatmap(imgs[i], torch.unsqueeze(gt_heatmaps[i].cpu(), 0)))
+                for i in range(num_images)
+            ]
+        )
+
+        overlayed_corner_predicted_keypoints = torch.stack(
+            [
+                transform(
+                    overlay_image_with_heatmap(
+                        imgs[i],
+                        torch.unsqueeze(
+                            generate_keypoints_heatmap(
+                                imgs.shape[-2:],
+                                get_keypoints_from_heatmap(
+                                    predicted_heatmaps[i].cpu(), self.minimal_keypoint_pixel_distance
+                                ),
+                                sigma=4,
+                            ),
+                            0,
+                        ),
+                    )
+                )
+                for i in range(num_images)
+            ]
+        )
+        images = torch.cat(
+            [overlayed_corner_predicted_heatmap, overlayed_corner_predicted_keypoints, overlayed_corner_gt]
+        )
+
+        grid = torchvision.utils.make_grid(images, nrow=num_images)
+        self.logger.experiment.log(
+            {
+                f"{keypoint_class}_keypoints": wandb.Image(
+                    grid, caption="top: predicted heatmaps, middle: predicted keypoints, bottom: gt heatmap"
+                )
+            }
+        )
 
     @staticmethod
     def add_model_argparse_args(parent_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
@@ -384,9 +394,23 @@ class KeypointDetector(pl.LightningModule):
 
         return parent_parser
 
-    ##################
-    # util functions #
-    ##################
+    def update_ap_metrics(
+        self, predicted_heatmaps: torch.Tensor, gt_keypoints: torch.Tensor, validation_metric: KeypointAPMetrics
+    ):
+        """
+        Update provided AP metric by extracting the detected keypoints for each heatmap
+        and combining them with the gt keypoints for the same frame
+        """
+        # log corner keypoints to AP metrics, frame by frame
+        formatted_gt_keypoints = [
+            [Keypoint(int(k[0]), int(k[1])) for k in frame_gt_keypoints] for frame_gt_keypoints in gt_keypoints
+        ]
+        for i, predicted_frame_heatmap in enumerate(torch.unbind(predicted_heatmaps, 0)):
+            detected_corner_keypoints = self.extract_detected_keypoints(predicted_frame_heatmap)
+            validation_metric.update(detected_corner_keypoints, formatted_gt_keypoints[i])
+
+    def is_ap_epoch(self):
+        return self.ap_epoch_start <= self.current_epoch and self.current_epoch % self.ap_epoch_freq == 0
 
     def create_heatmap_batch(self, shape: Tuple[int, int], keypoints: torch.Tensor) -> torch.Tensor:
         """[summary]
