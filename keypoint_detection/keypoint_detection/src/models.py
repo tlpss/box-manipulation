@@ -271,10 +271,12 @@ class KeypointDetector(pl.LightningModule):
         result_dict.update({"loss": loss})
 
         # visualization
-        if validate and batch_idx == 1:
-            self.visualize_predictions(imgs, predicted_corner_heatmaps, corner_heatmaps)
+        if batch_idx == 1:
+            self.visualize_predictions(imgs, predicted_corner_heatmaps.detach(), corner_heatmaps, validate=validate)
             if self.detect_flap_keypoints:
-                self.visualize_predictions(imgs, predicted_flap_heatmaps, flap_heatmaps, keypoint_class="flap")
+                self.visualize_predictions(
+                    imgs, predicted_flap_heatmaps.detach(), flap_heatmaps, keypoint_class="flap", validate=validate
+                )
 
         return result_dict
 
@@ -331,6 +333,7 @@ class KeypointDetector(pl.LightningModule):
         predicted_heatmaps: torch.Tensor,
         gt_heatmaps: torch.Tensor,
         keypoint_class: str = "corner",
+        validate: bool = True,
     ):
         num_images = min(predicted_heatmaps.shape[0], 6)
         transform = torchvision.transforms.ToTensor()
@@ -374,9 +377,11 @@ class KeypointDetector(pl.LightningModule):
         )
 
         grid = torchvision.utils.make_grid(images, nrow=num_images)
+        mode = "val" if validate else "train"
+        label = f"{keypoint_class}_{mode}_keypoints"
         self.logger.experiment.log(
             {
-                f"{keypoint_class}_keypoints": wandb.Image(
+                label: wandb.Image(
                     grid, caption="top: predicted heatmaps, middle: predicted keypoints, bottom: gt heatmap"
                 )
             }
