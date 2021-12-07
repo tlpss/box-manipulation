@@ -256,7 +256,7 @@ class KeypointDetector(pl.LightningModule):
             flap_heatmaps = self.create_heatmap_batch(imgs[0].shape[1:], flap_keypoints)
             predicted_flap_heatmaps = predicted_heatmaps[:, 1, :, :]
             flap_loss = self.heatmap_loss(predicted_flap_heatmaps, flap_heatmaps)
-            loss += flap_loss
+            loss = loss + flap_loss  # cannot do inline on tensor with grad!
 
             result_dict.update({"flap_loss": flap_loss, "flap_keypoints": flap_keypoints})
 
