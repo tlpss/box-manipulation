@@ -89,6 +89,9 @@ class KeypointDetector(pl.LightningModule):
 
         self.corner_validation_metric = KeypointAPMetrics(self.maximal_gt_keypoint_pixel_distances)
 
+        if self.detect_flap_keypoints:
+            self.flap_validation_metric = KeypointAPMetrics(self.maximal_gt_keypoint_pixel_distances)
+
         self.n_channels_in = 3
         self.n_channes = n_channels
         self.n_channels_out = (
@@ -297,7 +300,9 @@ class KeypointDetector(pl.LightningModule):
             self.update_ap_metrics(predicted_corner_heatmaps, gt_corner_keypoints, self.corner_validation_metric)
 
             if self.detect_flap_keypoints:
-                pass
+                predicted_flap_heatmaps = result_dict["predicted_heatmaps"][:, 1, :, :]
+                gt_flap_keypoints = result_dict["flap_keypoints"]
+                self.update_ap_metrics(predicted_flap_heatmaps, gt_flap_keypoints, self.flap_validation_metric)
 
         ## log (defaults to on_epoch, which aggregates the logged values over entire validation set)
         self.log("validation/epoch_loss", result_dict["loss"])
@@ -309,16 +314,13 @@ class KeypointDetector(pl.LightningModule):
         """
 
         if self.is_ap_epoch():
-            # compute ap's
-            corner_ap_metrics = self.corner_validation_metric.compute()
-            print(f"{corner_ap_metrics=}")
-            for maximal_distance, ap in corner_ap_metrics.items():
-                self.log(f"validation/corner_ap/d={maximal_distance}", ap)
+            mean_ap = self.compute_and_log_metrics(self.corner_validation_metric)
 
-            mean_corner_ap = sum(corner_ap_metrics.values()) / len(corner_ap_metrics.values())
+            if self.detect_flap_keypoints:
+                flap_ap = self.compute_and_log_metrics(self.flap_validation_metric, "flap")
+                mean_ap = (mean_ap + flap_ap) / 2
 
-            self.log(f"meanAP", mean_corner_ap)  # log top level for wandb hyperparam chart.
-            self.corner_validation_metric.reset()
+            self.log("meanAP", mean_ap)
 
     ##################
     # util functions #
@@ -413,6 +415,22 @@ class KeypointDetector(pl.LightningModule):
         for i, predicted_frame_heatmap in enumerate(torch.unbind(predicted_heatmaps, 0)):
             detected_corner_keypoints = self.extract_detected_keypoints(predicted_frame_heatmap)
             validation_metric.update(detected_corner_keypoints, formatted_gt_keypoints[i])
+
+    def compute_and_log_metrics(self, validation_metric: KeypointAPMetrics, keypoint_class: str = "corner") -> float:
+        """
+        logs ap for each max_distance, resets metric and returns meanAP
+        """
+        # compute ap's
+        ap_metrics = validation_metric.compute()
+        print(f"{ap_metrics=}")
+        for maximal_distance, ap in ap_metrics.items():
+            self.log(f"validation/{keypoint_class}_ap/d={maximal_distance}", ap)
+
+        mean_ap = sum(ap_metrics.values()) / len(ap_metrics.values())
+
+        self.log(f"validation/{keypoint_class}_meanAP", mean_ap)  # log top level for wandb hyperparam chart.
+        validation_metric.reset()
+        return mean_ap
 
     def is_ap_epoch(self):
         return self.ap_epoch_start <= self.current_epoch and self.current_epoch % self.ap_epoch_freq == 0
