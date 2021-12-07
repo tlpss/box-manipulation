@@ -360,7 +360,7 @@ class KeypointDetector(pl.LightningModule):
                                 get_keypoints_from_heatmap(
                                     predicted_heatmaps[i].cpu(), self.minimal_keypoint_pixel_distance
                                 ),
-                                sigma=4,
+                                sigma=max(1, int(imgs.shape[-1] / 64)),
                             ),
                             0,
                         ),

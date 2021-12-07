@@ -35,7 +35,6 @@ parameters:
     value: false
 
   heatmap_sigma:
-    values:
     min: 4
     max: 12
 
