@@ -1,4 +1,5 @@
 import argparse
+import distutils.util
 from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
@@ -28,7 +29,7 @@ class KeypointDetector(pl.LightningModule):
         self,
         heatmap_sigma=10,
         n_channels=32,
-        detect_flap_keypoints=True,
+        detect_flap_keypoints: Union[bool, str] = True,
         maximal_gt_keypoint_pixel_distances: Union[str, List[int]] = None,
         minimal_keypoint_extraction_pixel_distance: int = None,
         learning_rate: float = 5e-4,
@@ -57,7 +58,11 @@ class KeypointDetector(pl.LightningModule):
         # 2. add to the argparse method of this module
         # 3. pass them along when calling the train.py file to override their default value
         self.learning_rate = learning_rate
+
+        if isinstance(detect_flap_keypoints, str):
+            detect_flap_keypoints = distutils.util.strtobool(detect_flap_keypoints)
         self.detect_flap_keypoints = detect_flap_keypoints
+
         self.heatmap_sigma = heatmap_sigma
 
         self.ap_epoch_start = 2
@@ -289,7 +294,7 @@ class KeypointDetector(pl.LightningModule):
             # update corner AP metric
             predicted_corner_heatmaps = result_dict["predicted_heatmaps"][:, 0, :, :]
             gt_corner_keypoints = result_dict["corner_keypoints"]
-            self.update_ap_metrics(self, predicted_corner_heatmaps, gt_corner_keypoints, self.corner_validation_metric)
+            self.update_ap_metrics(predicted_corner_heatmaps, gt_corner_keypoints, self.corner_validation_metric)
 
             if self.detect_flap_keypoints:
                 pass
@@ -387,10 +392,10 @@ class KeypointDetector(pl.LightningModule):
 
         parser.add_argument("--heatmap_sigma", type=int, required=False)
         parser.add_argument("--n_channels", type=int, required=False)
-        parser.add_argument("--detect_flap_keypoints", type=bool, required=False)
+        parser.add_argument("--detect_flap_keypoints", default=True, type=str, required=False)
         parser.add_argument("--minimal_keypoint_extract_pixel_distance", type=int, required=False)
         parser.add_argument("--maximal_gt_keypoint_pixel_distances", type=str, required=False)
-        parser.add_argument("--learning_rate", type=int, required=False)
+        parser.add_argument("--learning_rate", type=float, required=False)
 
         return parent_parser
 
