@@ -3,10 +3,10 @@ from argparse import ArgumentParser, Namespace
 from typing import Tuple
 
 import pytorch_lightning as pl
-import wandb
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.trainer.trainer import Trainer
 
+import wandb
 from keypoint_detection import BoxKeypointsDataModule, KeypointDetector
 from keypoint_detection.src.datamodule import BoxDatasetPreloaded
 
@@ -113,7 +113,7 @@ if __name__ == "__main__":
     # however it is done for completeness.
     args = {k: v for k, v in args.items() if v is not None}  # and v is not parser.get_default(k)}
 
-    print(f" argparse arguments ={args=}")
+    print(f" argparse arguments ={args}")
 
     # update the hyperparameters with the argparse parameters
     # this adds new <key,value> pairs if the keys did not exist and

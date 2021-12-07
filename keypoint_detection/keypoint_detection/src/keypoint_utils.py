@@ -71,7 +71,7 @@ def get_keypoints_from_heatmap(heatmap: torch.Tensor, min_keypoint_pixel_distanc
     """
 
     np_heatmap = heatmap.cpu().numpy()
-    keypoints = peak_local_max(np_heatmap, min_distance=min_keypoint_pixel_distance)
+    keypoints = peak_local_max(np_heatmap, min_distance=min_keypoint_pixel_distance, threshold_rel=0.05)
     return keypoints[::, ::-1].tolist()  # convert to (u,v) aka (col,row) coord frame from (row,col)
 
 
