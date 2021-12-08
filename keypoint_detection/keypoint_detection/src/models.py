@@ -271,7 +271,7 @@ class KeypointDetector(pl.LightningModule):
         result_dict.update({"loss": loss})
 
         # visualization
-        if batch_idx == 1:
+        if batch_idx == 0:
             self.visualize_predictions(imgs, predicted_corner_heatmaps.detach(), corner_heatmaps, validate=validate)
             if self.detect_flap_keypoints:
                 self.visualize_predictions(
