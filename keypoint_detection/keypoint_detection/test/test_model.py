@@ -6,6 +6,7 @@ import torch
 
 from keypoint_detection.src.datamodule import BoxKeypointsDataModule, BoxKeypointsDataset
 from keypoint_detection.src.keypoint_utils import generate_keypoints_heatmap
+from keypoint_detection.src.metrics import KeypointAPMetric
 from keypoint_detection.src.models import KeypointDetector
 
 
@@ -62,4 +63,22 @@ class TestModel(unittest.TestCase):
         with torch.no_grad():
             model(imgs)
 
-    # TODO: test on GPU if available
+    def test_gt_heatmaps(self):
+        max_dst = 2
+        model = KeypointDetector(heatmap_sigma=8)
+        metric = KeypointAPMetric(max_dst)
+        TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+        module = BoxKeypointsDataModule(
+            BoxKeypointsDataset(
+                os.path.join(TEST_DIR, "test_dataset/dataset.json"), os.path.join(TEST_DIR, "test_dataset")
+            ),
+            2,
+            0.5,  # make sure val dataloader has len >= 1
+        )
+        for batch in module.train_dataloader():
+            imgs, corner_keypoints, _ = batch
+            heatmaps = model.create_heatmap_batch(imgs[0].shape[1:], corner_keypoints)
+            model.update_ap_metrics(heatmaps, corner_keypoints, metric)
+
+        ap = metric.compute()
+        self.assertEqual(ap, 1.0)

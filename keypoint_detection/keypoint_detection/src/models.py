@@ -30,7 +30,7 @@ class KeypointDetector(pl.LightningModule):
         heatmap_sigma=10,
         n_channels=32,
         detect_flap_keypoints: Union[bool, str] = True,
-        maximal_gt_keypoint_pixel_distances: Union[str, List[int]] = None,
+        maximal_gt_keypoint_pixel_distances: Union[str, List[float]] = None,
         minimal_keypoint_extraction_pixel_distance: int = None,
         learning_rate: float = 5e-4,
         **kwargs,
@@ -73,7 +73,7 @@ class KeypointDetector(pl.LightningModule):
             # if str (from argparse, convert to list of ints)
             if isinstance(maximal_gt_keypoint_pixel_distances, str):
                 maximal_gt_keypoint_pixel_distances = [
-                    int(val) for val in maximal_gt_keypoint_pixel_distances.strip().split(" ")
+                    float(val) for val in maximal_gt_keypoint_pixel_distances.strip().split(" ")
                 ]
 
             self.maximal_gt_keypoint_pixel_distances = maximal_gt_keypoint_pixel_distances

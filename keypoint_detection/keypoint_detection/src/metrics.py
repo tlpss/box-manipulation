@@ -45,7 +45,7 @@ class ClassifiedKeypoint(DetectedKeypoint):
 def keypoint_classification(
     detected_keypoints: List[DetectedKeypoint],
     ground_truth_keypoints: List[Keypoint],
-    threshold_distance: int,
+    threshold_distance: float,
 ) -> List[ClassifiedKeypoint]:
     """Classifies keypoints of a **single** frame in True Positives or False Positives by searching for unused gt keypoints in prediction probability order
     that are within distance d of the detected keypoint.
@@ -53,7 +53,7 @@ def keypoint_classification(
     Args:
         detected_keypoints (List[DetectedKeypoint]): The detected keypoints in the frame
         ground_truth_keypoints (List[Keypoint]): The ground truth keypoints of a frame
-        threshold_distance (int): maximal distance in pixel coordinate space between detected keypoint and ground truth keypoint to be considered a TP
+        threshold_distance: maximal distance in pixel coordinate space between detected keypoint and ground truth keypoint to be considered a TP
 
     Returns:
         List[ClassifiedKeypoint]: Keypoints with TP label.
@@ -163,11 +163,11 @@ def calculate_ap_from_pr(precision: List[float], recall: List[float]) -> float:
 class KeypointAPMetric(Metric):
     """torchmetrics-like interface for the Average Precision implementation"""
 
-    def __init__(self, keypoint_threshold_distance: int, dist_sync_on_step=False):
+    def __init__(self, keypoint_threshold_distance: float, dist_sync_on_step=False):
         """
 
         Args:
-            keypoint_threshold_distance (int): distance from ground_truth keypoint that is used to classify keypoint as TP or FP.
+            keypoint_threshold_distance (float): distance from ground_truth keypoint that is used to classify keypoint as TP or FP.
         """
 
         super().__init__(dist_sync_on_step=dist_sync_on_step)
@@ -200,7 +200,7 @@ class KeypointAPMetrics(Metric):
     Uses KeypointAPMetric class.
     """
 
-    def __init__(self, keypoint_threshold_distances: List[int], dist_sync_on_step=False):
+    def __init__(self, keypoint_threshold_distances: List[float], dist_sync_on_step=False):
         super().__init__(dist_sync_on_step=dist_sync_on_step)
 
         self.ap_metrics = [KeypointAPMetric(dst, dist_sync_on_step) for dst in keypoint_threshold_distances]
@@ -209,7 +209,7 @@ class KeypointAPMetrics(Metric):
         for metric in self.ap_metrics:
             metric.update(detected_keypoints, gt_keypoints)
 
-    def compute(self) -> Dict[int, float]:
+    def compute(self) -> Dict[float, float]:
         result_dict = {}
         for metric in self.ap_metrics:
             result_dict.update({metric.keypoint_threshold_distance: metric.compute()})
@@ -218,8 +218,3 @@ class KeypointAPMetrics(Metric):
     def reset(self) -> None:
         for metric in self.ap_metrics:
             metric.reset()
-
-
-class KeypointMeanAPMetrics(Metric):
-    # TODO: aggregate KeypointAPMetrics for different cls of keypoints
-    pass
