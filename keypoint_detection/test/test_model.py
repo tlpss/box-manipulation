@@ -4,10 +4,10 @@ import unittest
 import pytorch_lightning as pl
 import torch
 
-from keypoint_detection.src.datamodule import BoxKeypointsDataModule, BoxKeypointsDataset
-from keypoint_detection.src.keypoint_utils import generate_keypoints_heatmap
-from keypoint_detection.src.metrics import KeypointAPMetric
-from keypoint_detection.src.models import KeypointDetector
+from keypoint_detection.datamodule import BoxKeypointsDataModule, BoxKeypointsDataset
+from keypoint_detection.keypoint_utils import generate_keypoints_heatmap
+from keypoint_detection.metrics import KeypointAPMetric
+from keypoint_detection.models import KeypointDetector
 
 
 class TestHeatmapUtils(unittest.TestCase):

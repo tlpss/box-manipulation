@@ -7,14 +7,14 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torchvision
-
 import wandb
-from keypoint_detection.src.keypoint_utils import (
+
+from keypoint_detection.keypoint_utils import (
     generate_keypoints_heatmap,
     get_keypoints_from_heatmap,
     overlay_image_with_heatmap,
 )
-from keypoint_detection.src.metrics import DetectedKeypoint, Keypoint, KeypointAPMetrics
+from keypoint_detection.metrics import DetectedKeypoint, Keypoint, KeypointAPMetrics
 
 
 class KeypointDetector(pl.LightningModule):

@@ -2,11 +2,7 @@ import unittest
 
 import torch
 
-from keypoint_detection.src.keypoint_utils import (
-    gaussian_heatmap,
-    generate_keypoints_heatmap,
-    get_keypoints_from_heatmap,
-)
+from keypoint_detection.keypoint_utils import gaussian_heatmap, generate_keypoints_heatmap, get_keypoints_from_heatmap
 
 
 class TestHeatmapUtils(unittest.TestCase):

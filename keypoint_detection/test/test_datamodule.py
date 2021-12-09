@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 import torch
 
-from keypoint_detection.src.datamodule import BoxDatasetPreloaded, BoxKeypointsDataModule, BoxKeypointsDataset
+from keypoint_detection.datamodule import BoxDatasetPreloaded, BoxKeypointsDataModule, BoxKeypointsDataset
 
 
 class TestDataSet(unittest.TestCase):
