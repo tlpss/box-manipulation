@@ -81,11 +81,9 @@ class KeypointDetector(pl.LightningModule):
             self.maximal_gt_keypoint_pixel_distances = [heatmap_sigma]
 
         if minimal_keypoint_extraction_pixel_distance:
-            self.minimal_keypoint_pixel_distance = minimal_keypoint_extraction_pixel_distance
+            self.minimal_keypoint_pixel_distance = int(minimal_keypoint_extraction_pixel_distance)
         else:
-            self.minimal_keypoint_pixel_distance = min(
-                self.maximal_gt_keypoint_pixel_distances
-            )  # TODO: validate with Rembert if this makes sense!
+            self.minimal_keypoint_pixel_distance = int(min(self.maximal_gt_keypoint_pixel_distances))
 
         self.corner_validation_metric = KeypointAPMetrics(self.maximal_gt_keypoint_pixel_distances)
 
