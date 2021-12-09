@@ -1,8 +1,11 @@
 **.egg-info
 **/__pycache__/
 **dataset**
+!**/test_dataset
 !**/test_dataset/dataset.json
+
 **wandb/
 lightning_logs**
 **/checkpoints/
 data-generation/assets
+.idea/**
