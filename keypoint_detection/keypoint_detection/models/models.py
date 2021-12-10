@@ -96,11 +96,11 @@ class KeypointDetector(pl.LightningModule):
         self.n_channels_out = (
             2 if self.detect_flap_keypoints else 1
         )  # number of keypoint classes = number of output channels of CNN
-        backbone = BackboneFactory.create_backbone("DilatedCnn", n_channels=32)
+        backbone = BackboneFactory.create_backbone("S3K", **kwargs)
         self.model = nn.Sequential(
             backbone,
             nn.Conv2d(
-                in_channels=n_channels,
+                in_channels=backbone.get_n_channels_out(),
                 out_channels=self.n_channels_out,
                 kernel_size=(3, 3),
                 padding="same",
