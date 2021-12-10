@@ -7,7 +7,7 @@ import wandb
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.trainer.trainer import Trainer
 
-from keypoint_detection.datamodule import BoxDatasetPreloaded, BoxKeypointsDataModule
+from keypoint_detection.data.datamodule import BoxDatasetPreloaded, BoxKeypointsDataModule
 from keypoint_detection.models.models import KeypointDetector
 
 default_config = {
