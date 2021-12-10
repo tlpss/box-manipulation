@@ -16,6 +16,7 @@ from keypoint_detection.keypoint_utils import (
     overlay_image_with_heatmap,
 )
 from keypoint_detection.metrics import DetectedKeypoint, Keypoint, KeypointAPMetrics
+from keypoint_detection.models.backbones import BackboneFactory
 
 
 class KeypointDetector(pl.LightningModule):
@@ -91,113 +92,21 @@ class KeypointDetector(pl.LightningModule):
         if self.detect_flap_keypoints:
             self.flap_validation_metric = KeypointAPMetrics(self.maximal_gt_keypoint_pixel_distances)
 
-        self.n_channels_in = 3
-        self.n_channes = n_channels
+        self.n_channels = n_channels
         self.n_channels_out = (
             2 if self.detect_flap_keypoints else 1
         )  # number of keypoint classes = number of output channels of CNN
-        kernel_size = (3, 3)
+        backbone = BackboneFactory.create_backbone("DilatedCnn", n_channels=32)
         self.model = nn.Sequential(
-            nn.Conv2d(
-                in_channels=self.n_channels_in,
-                out_channels=n_channels,
-                kernel_size=kernel_size,
-                padding="same",
-            ),
-            nn.LeakyReLU(),
-            nn.Conv2d(
-                in_channels=n_channels,
-                out_channels=n_channels,
-                kernel_size=kernel_size,
-                padding="same",
-            ),
-            nn.LeakyReLU(),
-            nn.Conv2d(
-                in_channels=n_channels,
-                out_channels=n_channels,
-                kernel_size=kernel_size,
-                dilation=2,
-                padding="same",
-            ),
-            nn.LeakyReLU(),
-            nn.Conv2d(
-                in_channels=n_channels,
-                out_channels=n_channels,
-                kernel_size=kernel_size,
-                dilation=4,
-                padding="same",
-            ),
-            nn.LeakyReLU(),
-            nn.Conv2d(
-                in_channels=n_channels,
-                out_channels=n_channels,
-                kernel_size=kernel_size,
-                dilation=8,
-                padding="same",
-            ),
-            nn.LeakyReLU(),
-            nn.Conv2d(
-                in_channels=n_channels,
-                out_channels=n_channels,
-                kernel_size=kernel_size,
-                dilation=16,
-                padding="same",
-            ),
-            nn.LeakyReLU(),
-            nn.Conv2d(
-                in_channels=n_channels,
-                out_channels=n_channels,
-                kernel_size=kernel_size,
-                padding="same",
-            ),
-            nn.LeakyReLU(),
-            nn.Conv2d(
-                in_channels=n_channels,
-                out_channels=n_channels,
-                kernel_size=kernel_size,
-                dilation=2,
-                padding="same",
-            ),
-            nn.LeakyReLU(),
-            nn.Conv2d(
-                in_channels=n_channels,
-                out_channels=n_channels,
-                kernel_size=kernel_size,
-                dilation=4,
-                padding="same",
-            ),
-            nn.LeakyReLU(),
-            nn.Conv2d(
-                in_channels=n_channels,
-                out_channels=n_channels,
-                kernel_size=kernel_size,
-                dilation=8,
-                padding="same",
-            ),
-            nn.LeakyReLU(),
-            nn.Conv2d(
-                in_channels=n_channels,
-                out_channels=n_channels,
-                kernel_size=kernel_size,
-                dilation=16,
-                padding="same",
-            ),
-            nn.LeakyReLU(),
-            nn.Conv2d(
-                in_channels=n_channels,
-                out_channels=n_channels,
-                kernel_size=kernel_size,
-                padding="same",
-            ),
-            nn.LeakyReLU(),
+            backbone,
             nn.Conv2d(
                 in_channels=n_channels,
                 out_channels=self.n_channels_out,
-                kernel_size=kernel_size,
+                kernel_size=(3, 3),
                 padding="same",
             ),
-            nn.Sigmoid(),
-        ).to(self.device)
+            nn.Sigmoid(),  # create probabilities
+        )
 
         # save hyperparameters to logger, to make sure the model hparams are saved even if
         # they are not included in the config (i.e. if they are kept at the defaults).
