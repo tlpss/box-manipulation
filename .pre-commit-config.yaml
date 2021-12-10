@@ -30,3 +30,9 @@ repos:
         name: black - python code formatter
         entry: black --line-length 119
         files: \.py$
+
+-   repo: https://github.com/pycqa/flake8
+    rev:  4.0.1
+    hooks:
+    -   id: flake8
+        files: keypoint_detection/keypoint_detection/
