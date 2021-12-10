@@ -1,5 +1,6 @@
 import argparse
 import distutils.util
+from pathlib import Path
 from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
@@ -7,8 +8,8 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torchvision
-import wandb
 
+import wandb
 from keypoint_detection.keypoint_utils import (
     generate_keypoints_heatmap,
     get_keypoints_from_heatmap,
@@ -325,6 +326,14 @@ class KeypointDetector(pl.LightningModule):
     ##################
     # util functions #
     ##################
+    @classmethod
+    def get_artifact_dir_path(cls) -> Path:
+        return Path(__file__).resolve().parents[2] / "artifacts"
+
+    @classmethod
+    def get_wand_log_dir_path(cls) -> Path:
+        return Path(__file__).resolve().parents[2] / "wandb"
+
     def visualize_predictions(
         self,
         imgs: torch.Tensor,

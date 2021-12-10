@@ -11,7 +11,7 @@ import tqdm
 from skimage import io
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import ToTensor
-
+from pathlib import Path
 
 class ImageDataset(Dataset, abc.ABC):
     def __init__(self):
@@ -41,7 +41,7 @@ class BoxKeypointsDataset(ImageDataset):
         image_dir: path to dir from where the relative image paths in the json are included
         flap_keypoints: 'corner' or 'center', determines which type of keypoints that will be used for the flaps
         """
-
+        super(BoxKeypointsDataset, self).__init__()
         self.json_file = json_file
         self.image_dir = image_dir
 
@@ -58,6 +58,10 @@ class BoxKeypointsDataset(ImageDataset):
 
     def __len__(self):
         return len(self.dataset)
+
+    @classmethod
+    def get_data_dir_path(cls) -> Path:
+        return Path(__file__).resolve().parents[2] / "datasets"
 
     def convert_keypoint_coordinates_to_pixel_coordinates(
         self, keypoints: torch.Tensor, image_shape: int

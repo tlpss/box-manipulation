@@ -3,18 +3,18 @@ from argparse import ArgumentParser, Namespace
 from typing import Tuple
 
 import pytorch_lightning as pl
-import wandb
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.trainer.trainer import Trainer
 
+import wandb
 from keypoint_detection.data.datamodule import BoxDatasetPreloaded, BoxKeypointsDataModule
 from keypoint_detection.models.models import KeypointDetector
 
 default_config = {
     ## system params
     # Data params
-    "image_dataset_path": "/workspaces/box-manipulation/datasets/box_dataset2",
-    "json_dataset_path": "/workspaces/box-manipulation/datasets/box_dataset2/dataset.json",
+    "image_dataset_path": f"{BoxDatasetPreloaded.get_data_dir_path()}/box_dataset2",
+    "json_dataset_path": f"{BoxDatasetPreloaded.get_data_dir_path()}/box_dataset2/dataset.json",
     "batch_size": 4,
     "train_val_split_ratio": 0.1,
     # logging info
@@ -56,6 +56,8 @@ def create_pl_trainer_from_args(hparams: dict, wandb_logger: WandbLogger) -> Tra
     valid_kwargs = inspect.signature(Trainer.__init__).parameters
     trainer_kwargs = {name: hparams[name] for name in valid_kwargs if name in hparams}
     trainer_kwargs.update({"logger": wandb_logger})
+    # set dir for checkpoints
+    trainer_kwargs.update({"default_root_dir": KeypointDetector.get_artifact_dir_path()})
 
     # this call will add all relevant hyperparameters to the trainer, overwriting the empty namespace
     # and the default values in the Trainer class
@@ -78,7 +80,7 @@ def main(hparams: dict) -> Tuple[KeypointDetector, pl.Trainer]:
         hparams["batch_size"],
         hparams["train_val_split_ratio"],
     )
-    wandb_logger = WandbLogger(project=default_config["wandb_project"], entity=default_config["wandb_entity"])
+    wandb_logger = WandbLogger(project=default_config["wandb_project"], entity=default_config["wandb_entity"],dir = KeypointDetector.get_wand_log_dir_path() )
     trainer = create_pl_trainer_from_args(hparams, wandb_logger)
     trainer.fit(model, module)
     return model, trainer
