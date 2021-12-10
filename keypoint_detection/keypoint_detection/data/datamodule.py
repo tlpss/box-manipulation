@@ -3,6 +3,7 @@ import json
 import os
 import random
 import time
+from pathlib import Path
 
 import numpy as np
 import pytorch_lightning as pl
@@ -11,7 +12,7 @@ import tqdm
 from skimage import io
 from torch.utils.data import DataLoader, Dataset
 from torchvision.transforms import ToTensor
-from pathlib import Path
+
 
 class ImageDataset(Dataset, abc.ABC):
     def __init__(self):

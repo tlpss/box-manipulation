@@ -16,7 +16,7 @@ from keypoint_detection.keypoint_utils import (
     overlay_image_with_heatmap,
 )
 from keypoint_detection.metrics import DetectedKeypoint, Keypoint, KeypointAPMetrics
-from keypoint_detection.models.backbones import BackboneFactory
+from keypoint_detection.models.backbones.backbone_factory import BackboneFactory
 
 
 class KeypointDetector(pl.LightningModule):

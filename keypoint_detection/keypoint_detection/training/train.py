@@ -80,7 +80,11 @@ def main(hparams: dict) -> Tuple[KeypointDetector, pl.Trainer]:
         hparams["batch_size"],
         hparams["train_val_split_ratio"],
     )
-    wandb_logger = WandbLogger(project=default_config["wandb_project"], entity=default_config["wandb_entity"],dir = KeypointDetector.get_wand_log_dir_path() )
+    wandb_logger = WandbLogger(
+        project=default_config["wandb_project"],
+        entity=default_config["wandb_entity"],
+        dir=KeypointDetector.get_wand_log_dir_path(),
+    )
     trainer = create_pl_trainer_from_args(hparams, wandb_logger)
     trainer.fit(model, module)
     return model, trainer
