@@ -27,14 +27,34 @@ class KeypointDetector(pl.LightningModule):
 
     """
 
+    @staticmethod
+    def add_model_argparse_args(parent_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+        """
+        add named arguments from the init function to the parser
+        The default values here are actually duplicates from the init function, but this was for readability (??)
+        """
+        parser = parent_parser.add_argument_group("KeypointDetector")
+
+        # TODO: add these with inspection to avoid manual duplication!
+
+        parser.add_argument("--heatmap_sigma", type=int, required=False)
+        parser.add_argument("--detect_flap_keypoints", default=True, type=str, required=False)
+        parser.add_argument("--minimal_keypoint_extract_pixel_distance", type=int, required=False)
+        parser.add_argument("--maximal_gt_keypoint_pixel_distances", type=str, required=False)
+        parser.add_argument("--learning_rate", type=float, required=False)
+
+        BackboneFactory.add_to_argparse(parent_parser)
+
+        return parent_parser
+
     def __init__(
         self,
         heatmap_sigma=10,
-        n_channels=32,
         detect_flap_keypoints: Union[bool, str] = True,
         maximal_gt_keypoint_pixel_distances: Union[str, List[float]] = None,
         minimal_keypoint_extraction_pixel_distance: int = None,
         learning_rate: float = 5e-4,
+        backbone: str = "DilatedCnn",
         **kwargs,
     ):
         """[summary]
@@ -92,19 +112,21 @@ class KeypointDetector(pl.LightningModule):
         if self.detect_flap_keypoints:
             self.flap_validation_metric = KeypointAPMetrics(self.maximal_gt_keypoint_pixel_distances)
 
-        self.n_channels = n_channels
         self.n_channels_out = (
             2 if self.detect_flap_keypoints else 1
         )  # number of keypoint classes = number of output channels of CNN
-        backbone = BackboneFactory.create_backbone("S3K", **kwargs)
+
+        # create model
+        backbone = BackboneFactory.create_backbone(backbone, **kwargs)
+        head = nn.Conv2d(
+            in_channels=backbone.get_n_channels_out(),
+            out_channels=self.n_channels_out,
+            kernel_size=(3, 3),
+            padding="same",
+        )
         self.model = nn.Sequential(
             backbone,
-            nn.Conv2d(
-                in_channels=backbone.get_n_channels_out(),
-                out_channels=self.n_channels_out,
-                kernel_size=(3, 3),
-                padding="same",
-            ),
+            head,
             nn.Sigmoid(),  # create probabilities
         )
 
@@ -302,25 +324,6 @@ class KeypointDetector(pl.LightningModule):
                 )
             }
         )
-
-    @staticmethod
-    def add_model_argparse_args(parent_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
-        """
-        add named arguments from the init function to the parser
-        The default values here are actually duplicates from the init function, but this was for readability (??)
-        """
-        parser = parent_parser.add_argument_group("KeypointDetector")
-
-        # TODO: add these with inspection to avoid manual duplication!
-
-        parser.add_argument("--heatmap_sigma", type=int, required=False)
-        parser.add_argument("--n_channels", type=int, required=False)
-        parser.add_argument("--detect_flap_keypoints", default=True, type=str, required=False)
-        parser.add_argument("--minimal_keypoint_extract_pixel_distance", type=int, required=False)
-        parser.add_argument("--maximal_gt_keypoint_pixel_distances", type=str, required=False)
-        parser.add_argument("--learning_rate", type=float, required=False)
-
-        return parent_parser
 
     def update_ap_metrics(
         self, predicted_heatmaps: torch.Tensor, gt_keypoints: torch.Tensor, validation_metric: KeypointAPMetrics

@@ -5,7 +5,7 @@ from keypoint_detection.models.backbones.base_backbone import Backbone
 
 
 class DilatedCnn(Backbone):
-    def __init__(self, n_channels=32):
+    def __init__(self, n_channels=32, **kwargs):
         super().__init__()
         self.n_channels_in = 3
         self.n_channels = n_channels
