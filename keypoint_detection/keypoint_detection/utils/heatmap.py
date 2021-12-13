@@ -59,21 +59,22 @@ def generate_keypoints_heatmap(
     return img
 
 
-def get_keypoints_from_heatmap(heatmap: torch.Tensor, min_keypoint_pixel_distance: int) -> List[List[int]]:
+def get_keypoints_from_heatmap(heatmap: torch.Tensor, min_keypoint_pixel_distance: int) -> List[Tuple[int, int]]:
     """
-    Extracts all keypoints from a heatmap, where each keypoint is defined as being a local maximum within a 2D mask [ -min_pixel_distance, + pixel_distance]^2
+    Extracts at most 20 keypoints from a heatmap, where each keypoint is defined as being a local maximum within a 2D mask [ -min_pixel_distance, + pixel_distance]^2
     cf https://scikit-image.org/docs/dev/api/skimage.feature.html#skimage.feature.peak_local_max
 
     Args:
-        heatmap (torch.Tensor): heatmap image
-        min_keypoint_pixel_distance (int): The size of the local mask
+        heatmap : heatmap image
+        min_keypoint_pixel_distance : The size of the local mask
 
     Returns:
-        List(List(x,y)...): A list of 2D keypoints
+        A list of 2D keypoints
     """
 
     np_heatmap = heatmap.cpu().numpy()
-    keypoints = peak_local_max(np_heatmap, min_distance=min_keypoint_pixel_distance, threshold_rel=0.05)
+    # num_peaks and rel_threshold are set to limit computational burder when models do random predictions.
+    keypoints = peak_local_max(np_heatmap, min_distance=min_keypoint_pixel_distance, threshold_rel=0.05, num_peaks=20)
     return keypoints[::, ::-1].tolist()  # convert to (u,v) aka (col,row) coord frame from (row,col)
 
 

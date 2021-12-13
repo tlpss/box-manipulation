@@ -3,11 +3,13 @@ import unittest
 
 import pytorch_lightning as pl
 import torch
+from pytorch_lightning.loggers import WandbLogger
 
-from keypoint_detection.datamodule import BoxKeypointsDataModule, BoxKeypointsDataset
-from keypoint_detection.keypoint_utils import generate_keypoints_heatmap
-from keypoint_detection.metrics import KeypointAPMetric
+from keypoint_detection.data.datamodule import BoxKeypointsDataModule
+from keypoint_detection.data.dataset import BoxKeypointsDataset
+from keypoint_detection.models.metrics import KeypointAPMetric
 from keypoint_detection.models.models import KeypointDetector
+from keypoint_detection.utils.heatmap import generate_keypoints_heatmap
 
 
 class TestHeatmapUtils(unittest.TestCase):
@@ -40,6 +42,8 @@ class TestModel(unittest.TestCase):
         """
         run train and evaluation to see if all goes as expected
         """
+        wandb_logger = WandbLogger(dir=KeypointDetector.get_wand_log_dir_path(), mode="offline")
+
         model = KeypointDetector(maximal_gt_keypoint_pixel_distances=[2, 4, 5])
         TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -55,7 +59,7 @@ class TestModel(unittest.TestCase):
         else:
             gpus = 0
 
-        trainer = pl.Trainer(max_epochs=2, log_every_n_steps=1, gpus=gpus)
+        trainer = pl.Trainer(max_epochs=2, log_every_n_steps=1, gpus=gpus, logger=wandb_logger)
         trainer.fit(model, module)
 
         batch = next(iter(module.train_dataloader()))

@@ -1,12 +1,13 @@
 import unittest
 
-from keypoint_detection.metrics import (
+from keypoint_detection.models.metrics import (
     ClassifiedKeypoint,
+    DetectedKeypoint,
+    Keypoint,
     calculate_ap_from_pr,
     calculate_precision_recall,
     keypoint_classification,
 )
-from keypoint_detection.models import DetectedKeypoint, Keypoint
 
 
 class TestKeypointClassification(unittest.TestCase):

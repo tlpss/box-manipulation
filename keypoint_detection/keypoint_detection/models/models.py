@@ -7,16 +7,12 @@ import numpy as np
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
-import torchvision
 
-import wandb
-from keypoint_detection.keypoint_utils import (
-    generate_keypoints_heatmap,
-    get_keypoints_from_heatmap,
-    overlay_image_with_heatmap,
-)
-from keypoint_detection.metrics import DetectedKeypoint, Keypoint, KeypointAPMetrics
 from keypoint_detection.models.backbones.backbone_factory import BackboneFactory
+from keypoint_detection.models.metrics import DetectedKeypoint, Keypoint, KeypointAPMetrics
+from keypoint_detection.models.utils.loss import LossFactory
+from keypoint_detection.models.utils.visualization import visualize_predictions
+from keypoint_detection.utils.heatmap import generate_keypoints_heatmap, get_keypoints_from_heatmap
 
 
 class KeypointDetector(pl.LightningModule):
@@ -44,6 +40,7 @@ class KeypointDetector(pl.LightningModule):
         parser.add_argument("--learning_rate", type=float, required=False)
 
         BackboneFactory.add_to_argparse(parent_parser)
+        LossFactory.add_to_argparse(parent_parser)
 
         return parent_parser
 
@@ -55,6 +52,7 @@ class KeypointDetector(pl.LightningModule):
         minimal_keypoint_extraction_pixel_distance: int = None,
         learning_rate: float = 5e-4,
         backbone: str = "DilatedCnn",
+        loss: str = "bce",
         **kwargs,
     ):
         """[summary]
@@ -130,6 +128,7 @@ class KeypointDetector(pl.LightningModule):
             nn.Sigmoid(),  # create probabilities
         )
 
+        self.heatmap_loss = LossFactory.create_loss(loss, **kwargs)
         # save hyperparameters to logger, to make sure the model hparams are saved even if
         # they are not included in the config (i.e. if they are kept at the defaults).
         # this is for later reference and consistency.
@@ -145,20 +144,6 @@ class KeypointDetector(pl.LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), self.learning_rate)
         return optimizer
-
-    def heatmap_loss(self, predicted_heatmaps: torch.Tensor, heatmaps: torch.Tensor) -> torch.Tensor:
-        """Computes the loss of 2 batches of heatmaps
-
-        Args:
-            predicted_heatmaps (torch.Tensor(NxHxW)):the predicted heatmaps
-            heatmaps (torch.Tensor((NxHxW)): the ground truth heatmaps
-
-        Returns:
-            torch.Tensor: scalar loss value
-        """
-        # No focal loss (Objects as Points) as in CenterNet paper but BCS as in PAF
-        # bc @Peter said it does not improve performance too much (KISS)
-        return torch.nn.functional.binary_cross_entropy(predicted_heatmaps, heatmaps, reduction="mean")
 
     def shared_step(self, batch, batch_idx, validate=False) -> Dict[str, Any]:
         """
@@ -202,10 +187,23 @@ class KeypointDetector(pl.LightningModule):
 
         # visualization
         if batch_idx == 0 and self.current_epoch > 0:
-            self.visualize_predictions(imgs, predicted_corner_heatmaps.detach(), corner_heatmaps, validate=validate)
+            visualize_predictions(
+                imgs,
+                predicted_corner_heatmaps.detach(),
+                corner_heatmaps,
+                self.logger,
+                self.minimal_keypoint_pixel_distance,
+                validate=validate,
+            )
             if self.detect_flap_keypoints:
-                self.visualize_predictions(
-                    imgs, predicted_flap_heatmaps.detach(), flap_heatmaps, keypoint_class="flap", validate=validate
+                visualize_predictions(
+                    imgs,
+                    predicted_flap_heatmaps.detach(),
+                    flap_heatmaps,
+                    self.logger,
+                    self.minimal_keypoint_pixel_distance,
+                    keypoint_class="flap",
+                    validate=validate,
                 )
 
         return result_dict
@@ -264,66 +262,6 @@ class KeypointDetector(pl.LightningModule):
     @classmethod
     def get_wand_log_dir_path(cls) -> Path:
         return Path(__file__).resolve().parents[2] / "wandb"
-
-    def visualize_predictions(
-        self,
-        imgs: torch.Tensor,
-        predicted_heatmaps: torch.Tensor,
-        gt_heatmaps: torch.Tensor,
-        keypoint_class: str = "corner",
-        validate: bool = True,
-    ):
-        num_images = min(predicted_heatmaps.shape[0], 6)
-        transform = torchvision.transforms.ToTensor()
-
-        # corners
-        overlayed_corner_predicted_heatmap = torch.stack(
-            [
-                transform(overlay_image_with_heatmap(imgs[i], torch.unsqueeze(predicted_heatmaps[i].cpu(), 0)))
-                for i in range(num_images)
-            ]
-        )
-        overlayed_corner_gt = torch.stack(
-            [
-                transform(overlay_image_with_heatmap(imgs[i], torch.unsqueeze(gt_heatmaps[i].cpu(), 0)))
-                for i in range(num_images)
-            ]
-        )
-
-        overlayed_corner_predicted_keypoints = torch.stack(
-            [
-                transform(
-                    overlay_image_with_heatmap(
-                        imgs[i],
-                        torch.unsqueeze(
-                            generate_keypoints_heatmap(
-                                imgs.shape[-2:],
-                                get_keypoints_from_heatmap(
-                                    predicted_heatmaps[i].cpu(), self.minimal_keypoint_pixel_distance
-                                ),
-                                sigma=max(1, int(imgs.shape[-1] / 64)),
-                            ),
-                            0,
-                        ),
-                    )
-                )
-                for i in range(num_images)
-            ]
-        )
-        images = torch.cat(
-            [overlayed_corner_predicted_heatmap, overlayed_corner_predicted_keypoints, overlayed_corner_gt]
-        )
-
-        grid = torchvision.utils.make_grid(images, nrow=num_images)
-        mode = "val" if validate else "train"
-        label = f"{keypoint_class}_{mode}_keypoints"
-        self.logger.experiment.log(
-            {
-                label: wandb.Image(
-                    grid, caption="top: predicted heatmaps, middle: predicted keypoints, bottom: gt heatmap"
-                )
-            }
-        )
 
     def update_ap_metrics(
         self, predicted_heatmaps: torch.Tensor, gt_keypoints: torch.Tensor, validation_metric: KeypointAPMetrics
@@ -397,7 +335,9 @@ class KeypointDetector(pl.LightningModule):
 
         return detected_keypoints
 
-    def compute_keypoint_probability(self, heatmap: torch.Tensor, detected_keypoints: List[List[int]]) -> List[float]:
+    def compute_keypoint_probability(
+        self, heatmap: torch.Tensor, detected_keypoints: List[Tuple[int, int]]
+    ) -> List[float]:
         """Compute probability measure for each detected keypoint on the heatmap
 
         Args:
