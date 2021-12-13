@@ -57,12 +57,16 @@ class S3K(Backbone):
         self.conv4 = nn.Conv2d(in_channels=32, out_channels=32, kernel_size=self.kernel_size, padding="same")
         self.up1 = nn.ConvTranspose2d(in_channels=32, out_channels=32, kernel_size=self.kernel_size, stride=(2, 2))
 
-        self.conv5 = nn.Conv2d(in_channels=32 + 16, out_channels=32, kernel_size=self.kernel_size, padding="same")
+        self.conv5 = nn.Conv2d(
+            in_channels=32 + 16, out_channels=32, kernel_size=self.kernel_size, padding="same", bias=False
+        )
         self.norm4 = nn.BatchNorm2d(32)
         self.up2 = nn.ConvTranspose2d(
             in_channels=32, out_channels=32, kernel_size=self.kernel_size, stride=(2, 2), output_padding=1
         )
-        self.conv6 = nn.Conv2d(in_channels=32 + 3, out_channels=32, kernel_size=self.kernel_size, padding="same")
+        self.conv6 = nn.Conv2d(
+            in_channels=32 + 3, out_channels=32, kernel_size=self.kernel_size, padding="same", bias=False
+        )
         self.norm5 = nn.BatchNorm2d(32)
         self.relu = nn.ReLU()
 
