@@ -6,6 +6,7 @@
 
 **wandb/
 lightning_logs**
+**.ckpt
 **/checkpoints/
 data-generation/assets
 .idea/**

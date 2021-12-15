@@ -3,10 +3,10 @@ from argparse import ArgumentParser, Namespace
 from typing import Tuple
 
 import pytorch_lightning as pl
+import wandb
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.trainer.trainer import Trainer
 
-import wandb
 from keypoint_detection.data.datamodule import BoxKeypointsDataModule
 from keypoint_detection.data.dataset import BoxDatasetPreloaded
 from keypoint_detection.models.models import KeypointDetector
@@ -85,6 +85,7 @@ def main(hparams: dict) -> Tuple[KeypointDetector, pl.Trainer]:
         project=default_config["wandb_project"],
         entity=default_config["wandb_entity"],
         dir=KeypointDetector.get_wand_log_dir_path(),
+        log_model=True,
     )
     trainer = create_pl_trainer_from_args(hparams, wandb_logger)
     trainer.fit(model, module)
@@ -134,7 +135,12 @@ if __name__ == "__main__":
     # with sweeps, wandb will send hyperparameters to the current agent after the init
     # these can then be found in the 'config'
     # (so wandb params > argparse > default)
-    wandb.init(project=config["wandb_project"], entity=config["wandb_entity"], config=config)
+    wandb.init(
+        project=config["wandb_project"],
+        entity=config["wandb_entity"],
+        config=config,
+        dir=KeypointDetector.get_wand_log_dir_path(),
+    )
 
     # get (possibly updated by sweep) config parameters
     config = wandb.config
