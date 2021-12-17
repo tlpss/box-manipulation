@@ -93,8 +93,9 @@ def overlay_image_with_heatmap(img: torch.Tensor, heatmap: torch.Tensor, alpha=0
     """
     # Create heatmap image in red channel
     viridis = cm.get_cmap("viridis")
-    heatmap = viridis(heatmap.numpy()[0])
+    heatmap = viridis(heatmap[0].numpy())
     heatmap = TF.to_tensor(heatmap[:, :, 0:3])
+    heatmap = heatmap.type(torch.float32)
     img = img.detach().cpu()
     overlay = alpha * img + (1 - alpha) * heatmap
     overlay = TF.to_pil_image(overlay.cpu())
