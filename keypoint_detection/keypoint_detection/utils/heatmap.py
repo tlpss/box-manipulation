@@ -2,6 +2,7 @@ from typing import List, Tuple, Union
 
 import torch
 import torchvision.transforms.functional as TF
+from matplotlib import cm
 from PIL import Image
 from skimage.feature import peak_local_max
 
@@ -59,7 +60,9 @@ def generate_keypoints_heatmap(
     return img
 
 
-def get_keypoints_from_heatmap(heatmap: torch.Tensor, min_keypoint_pixel_distance: int) -> List[Tuple[int, int]]:
+def get_keypoints_from_heatmap(
+    heatmap: torch.Tensor, min_keypoint_pixel_distance: int, max_keypoints=None
+) -> List[Tuple[int, int]]:
     """
     Extracts at most 20 keypoints from a heatmap, where each keypoint is defined as being a local maximum within a 2D mask [ -min_pixel_distance, + pixel_distance]^2
     cf https://scikit-image.org/docs/dev/api/skimage.feature.html#skimage.feature.peak_local_max
@@ -74,19 +77,27 @@ def get_keypoints_from_heatmap(heatmap: torch.Tensor, min_keypoint_pixel_distanc
 
     np_heatmap = heatmap.cpu().numpy()
     # num_peaks and rel_threshold are set to limit computational burder when models do random predictions.
-    keypoints = peak_local_max(np_heatmap, min_distance=min_keypoint_pixel_distance, threshold_rel=0.05, num_peaks=20)
+    if max_keypoints:
+        num_peaks = max_keypoints
+    else:
+        num_peaks = 20
+    keypoints = peak_local_max(
+        np_heatmap, min_distance=min_keypoint_pixel_distance, threshold_rel=0.05, num_peaks=num_peaks
+    )
     return keypoints[::, ::-1].tolist()  # convert to (u,v) aka (col,row) coord frame from (row,col)
 
 
-def overlay_image_with_heatmap(img: torch.Tensor, heatmap: torch.Tensor, alpha=0.4) -> Image:
+def overlay_image_with_heatmap(img: torch.Tensor, heatmap: torch.Tensor, alpha=0.5) -> Image:
     """
     Overlays image with the predicted heatmap, which is projected from grayscale to the red channel.
     """
     # Create heatmap image in red channel
-    heatmap = torch.cat((heatmap, torch.zeros(2, img.shape[1], img.shape[2])))
-    img = TF.to_pil_image(img.detach().cpu())
-    h_img = TF.to_pil_image(heatmap)
+    viridis = cm.get_cmap("viridis")
+    heatmap = viridis(heatmap.numpy()[0])
+    heatmap = TF.to_tensor(heatmap[:, :, 0:3])
+    img = img.detach().cpu()
+    overlay = alpha * img + (1 - alpha) * heatmap
 
-    overlay = Image.blend(img, h_img, alpha)
+    overlay = TF.to_pil_image(overlay)
 
     return overlay
