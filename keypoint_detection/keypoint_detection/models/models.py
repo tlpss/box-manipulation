@@ -239,6 +239,7 @@ class KeypointDetector(pl.LightningModule):
 
         ## log (defaults to on_epoch, which aggregates the logged values over entire validation set)
         self.log("validation/epoch_loss", result_dict["loss"])
+        self.log("validation/gt_loss", result_dict["gt_loss"])
 
     def validation_epoch_end(self, outputs):
         """
