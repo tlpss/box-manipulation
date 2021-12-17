@@ -168,7 +168,7 @@ class KeypointDetector(pl.LightningModule):
         gt_corner_loss = self.heatmap_loss(corner_heatmaps, corner_heatmaps)
         gt_loss = gt_corner_loss
         result_dict = {
-            "corner_loss": corner_loss,
+            "corner_loss": corner_loss.detach(),
             "corner_keypoints": corner_keypoints,
         }
 
@@ -183,7 +183,7 @@ class KeypointDetector(pl.LightningModule):
             loss = loss + flap_loss  # cannot do inline on tensor with grad!
             gt_flap_loss = self.heatmap_loss(flap_heatmaps, flap_heatmaps)
             gt_loss = gt_loss + gt_flap_loss
-            result_dict.update({"flap_loss": flap_loss, "flap_keypoints": flap_keypoints})
+            result_dict.update({"flap_loss": flap_loss.detach(), "flap_keypoints": flap_keypoints})
 
         result_dict.update({"loss": loss, "gt_loss": gt_loss})
 
