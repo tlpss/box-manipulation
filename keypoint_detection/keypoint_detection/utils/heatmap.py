@@ -97,7 +97,8 @@ def overlay_image_with_heatmap(img: torch.Tensor, heatmap: torch.Tensor, alpha=0
     heatmap = TF.to_tensor(heatmap[:, :, 0:3])
     img = img.detach().cpu()
     overlay = alpha * img + (1 - alpha) * heatmap
-
-    overlay = TF.to_pil_image(overlay)
+    print(overlay.shape)
+    print(overlay.dtype)
+    overlay = TF.to_pil_image(overlay.numpy())
 
     return overlay
