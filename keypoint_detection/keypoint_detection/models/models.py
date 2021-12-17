@@ -86,7 +86,7 @@ class KeypointDetector(pl.LightningModule):
         self.heatmap_sigma = heatmap_sigma
 
         self.ap_epoch_start = 2
-        self.ap_epoch_freq = 2
+        self.ap_epoch_freq = 3
 
         if maximal_gt_keypoint_pixel_distances:
 
@@ -217,6 +217,7 @@ class KeypointDetector(pl.LightningModule):
         # logging
         self.log("train/corner_loss", result_dict["corner_loss"])
         self.log("train/loss", result_dict["loss"])
+        self.log("train/gt_loss", result_dict["gt_loss"])
         if self.detect_flap_keypoints:
             self.log("train/flap_loss", result_dict["flap_loss"])
         return result_dict
