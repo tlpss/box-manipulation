@@ -10,27 +10,7 @@ from blender_utils.object_ops import cleanup_scene, look_at, make_object, rotate
 from general_utils.make_box import make_box, random_flap_angles
 
 hdris = [
-    "abandoned_church_8k.exr",
-    "abandoned_factory_canteen_01_8k.exr",
-    "abandoned_factory_canteen_02_8k.exr",
-    "abandoned_games_room_01_8k.exr",
-    "abandoned_games_room_02_8k.exr",
-    "abandoned_greenhouse_8k.exr",
-    "abandoned_hall_01_8k.exr",
-    "abandoned_workshop_8k.exr",
-    "adams_place_bridge_8k.exr",
-    "aerodynamics_workshop_8k.exr",
-    "aft_lounge_8k.exr",
-    "autoshop_01_8k.exr",
-    "bell_park_pier_8k.exr",
-    "champagne_castle_1_8k.exr",
-    "studio_small_09_8k.exr",
-    "spaichingen_hill_8k.exr",
-    "monbachtal_riverbank_8k.exr",
-    "dikhololo_night_8k.exr",
-    "sunset_in_the_chalk_quarry_8k.exr",
-    "air_museum_playground_8k.exr",
-    "sepulchral_chapel_rotunda_8k.exr",
+    "studio_small_09_1k.exr",
 ]
 
 
@@ -46,8 +26,8 @@ def generate_datapoint(output_dir, seed=0):
     scene.render.engine = "CYCLES"
     scene.render.image_settings.file_format = "PNG"
     scene.render.image_settings.color_mode = "RGB"
-    scene.render.resolution_x = 256
-    scene.render.resolution_y = 256
+    scene.render.resolution_x = 64
+    scene.render.resolution_y = 64
     scene.render.filepath = image_path
 
     # Enable GPU
@@ -63,7 +43,9 @@ def generate_datapoint(output_dir, seed=0):
     long_flaps_fraction = np.random.uniform(0.45, 0.5)
     short_flaps_fraction = np.random.uniform(0.25, 0.5)
     flap_size_fractions = (long_flaps_fraction, short_flaps_fraction)
+
     angles = random_flap_angles()
+
     mesh = make_box(l, w, h, angles, flap_size_fractions)
     box = make_object("Box", mesh)
     # set_location(box, (0.02, 0.01, 0))
