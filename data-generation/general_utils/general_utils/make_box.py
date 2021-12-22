@@ -65,7 +65,7 @@ def make_box(
     Returns:
         (vertices, edges, faces): the mesh as a tuple of lists of vertices, edges and faces.
     """
-    l, w, h = box_length, box_width, box_height
+    l, w, h = float(box_length), float(box_width), float(box_height)
 
     # Bottom face
     #  0 ________l_______ 1  ---> y

@@ -77,14 +77,11 @@ def generate_datapoint(output_dir, seed=0):
     scene.camera = camera
 
     # Box keypoints in 2D
-    corner_keypoints, flap_corner_keypoints, flap_center_keypoints = get_box_keypoints(box, camera, scene)
-
     data = {
         "image_path": image_path_relative,
-        "corner_keypoints": corner_keypoints,
-        "flap_corner_keypoints": flap_corner_keypoints,
-        "flap_center_keypoints": flap_center_keypoints,
     }
+    keypoints = get_box_keypoints(box, camera, scene)
+    data = data | keypoints
 
     json_dir = os.path.join(output_dir, "json")
     if not os.path.exists(json_dir):
