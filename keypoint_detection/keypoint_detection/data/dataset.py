@@ -35,7 +35,7 @@ class BoxKeypointsDataset(ImageDataset):
     cf https://pytorch.org/tutorials/beginner/data_loading_tutorial.html
     """
 
-    def __init__(self, json_file: str, image_dir: str, flap_keypoints_type: str = "corner"):
+    def __init__(self, json_file: str, image_dir: str, flap_keypoints_type: str = "corner", non_occluded_only: bool = False):
         """
         json_file:  path to json file with dataset
         image_dir: path to dir from where the relative image paths in the json are included
@@ -46,7 +46,14 @@ class BoxKeypointsDataset(ImageDataset):
         self.image_dir = image_dir
 
         assert flap_keypoints_type in ["center", "corner"]
-        self.flap_keypoints_type = flap_keypoints_type
+        flap_keypoints_type = flap_keypoints_type
+
+        self.corner_keypoints_name = "corner_keypoints"
+        self.flap_keypoints_name = f"flap_{flap_keypoints_type}_keypoints"
+        if non_occluded_only:
+            self.corner_keypoints_name += "_visible"
+            self.flap_keypoints_name += "_visible"
+
 
         self.transform = ToTensor()  # convert images to Torch Tensors
 
@@ -84,11 +91,8 @@ class BoxKeypointsDataset(ImageDataset):
         image = self.transform(image)
 
         # read keypoints
-        corner_keypoints = torch.Tensor(self.dataset[index]["corner_keypoints"])
-        if self.flap_keypoints_type == "center":
-            flap_keypoints = torch.Tensor(self.dataset[index]["flap_center_keypoints"])
-        else:
-            flap_keypoints = torch.Tensor(self.dataset[index]["flap_corner_keypoints"])
+        corner_keypoints = torch.Tensor(self.dataset[index][self.corner_keypoints_name])
+        flap_keypoints = torch.Tensor(self.dataset[index][self.flap_keypoints_name])
 
         # convert keypoints to pixel coords
         corner_keypoints = self.convert_keypoint_coordinates_to_pixel_coordinates(corner_keypoints, image.shape[-1])
@@ -112,14 +116,14 @@ class BoxDatasetIOCatcher(BoxKeypointsDataset):
     to overcome IOErrors on the GPULab. This does not require the entire dataset to be in memory.
     """
 
-    def __init__(self, json_file: str, image_dir: str, flap_keypoints_type: str = "corner", n_io_attempts: int = 4):
+    def __init__(self, json_file: str, image_dir: str, flap_keypoints_type: str = "corner",non_occluded_only: bool = False, n_io_attempts: int = 4):
         """
         json_file:  path to json file with dataset
         image_dir: path to dir from where the relative image paths in the json are included
         flap_keypoints: 'corner' or 'center', determines which type of keypoints that will be used for the flaps
         n_io_attempts: number of trials to load image from IO
         """
-        super().__init__(json_file, image_dir, flap_keypoints_type)
+        super().__init__(json_file, image_dir, flap_keypoints_type, non_occluded_only)
         self.n_io_attempts = n_io_attempts
 
     def get_image(self, index: int) -> np.ndarray:
@@ -147,14 +151,14 @@ class BoxDatasetPreloaded(BoxDatasetIOCatcher):
 
     """
 
-    def __init__(self, json_file: str, image_dir: str, flap_keypoints_type: str = "corner", n_io_attempts: int = 4):
+    def __init__(self, json_file: str, image_dir: str, flap_keypoints_type: str = "corner",non_occluded_only: bool = False, n_io_attempts: int = 4):
         """
         json_file:  path to json file with dataset
         image_dir: path to dir from where the relative image paths in the json are included
         flap_keypoints: 'corner' or 'center', determines which type of keypoints that will be used for the flaps
         n_io_attempts: number of trials to load image from IO
         """
-        super().__init__(json_file, image_dir, flap_keypoints_type, n_io_attempts)
+        super().__init__(json_file, image_dir, flap_keypoints_type,non_occluded_only, n_io_attempts)
         self.preloaded_images = [None] * len(self.dataset)
         self._preload()
 
