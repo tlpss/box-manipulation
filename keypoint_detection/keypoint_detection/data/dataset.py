@@ -14,6 +14,8 @@ from skimage import io
 from torch.utils.data import Dataset
 from torchvision.transforms import ToTensor
 
+from keypoint_detection.utils.tensor_padding import pad_tensor_with_nans
+
 
 class ImageDataset(Dataset, abc.ABC):
     def __init__(self):
@@ -69,11 +71,12 @@ class BoxKeypointsDataset(ImageDataset):
         self.image_dir = image_dataset_path
 
         assert flap_keypoints_type in ["center", "corner"]
-        flap_keypoints_type = flap_keypoints_type
+        self.flap_keypoints_type = flap_keypoints_type
 
         self.corner_keypoints_name = "corner_keypoints"
         self.flap_keypoints_name = f"flap_{flap_keypoints_type}_keypoints"
 
+        self.non_occluded_keypoints_only = non_occluded_keypoints_only
         if non_occluded_keypoints_only:
             self.corner_keypoints_name += "_visible"
             self.flap_keypoints_name += "_visible"
@@ -120,6 +123,12 @@ class BoxKeypointsDataset(ImageDataset):
         # convert keypoints to pixel coords
         corner_keypoints = self.convert_keypoint_coordinates_to_pixel_coordinates(corner_keypoints, image.shape[-1])
         flap_keypoints = self.convert_keypoint_coordinates_to_pixel_coordinates(flap_keypoints, image.shape[-1])
+
+        # pad the tensor to make sure all items of a batch have same size and can hence be collated by the default
+        # torch collate function.
+        if self.non_occluded_keypoints_only:
+            corner_keypoints = pad_tensor_with_nans(corner_keypoints, 4)
+            flap_keypoints = pad_tensor_with_nans(flap_keypoints, 8 if self.flap_keypoints_type == "corner" else 4)
 
         return image, corner_keypoints, flap_keypoints
 

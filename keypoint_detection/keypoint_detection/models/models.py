@@ -13,6 +13,7 @@ from keypoint_detection.models.metrics import DetectedKeypoint, Keypoint, Keypoi
 from keypoint_detection.models.utils.loss import LossFactory
 from keypoint_detection.models.utils.visualization import visualize_predictions
 from keypoint_detection.utils.heatmap import generate_keypoints_heatmap, get_keypoints_from_heatmap
+from keypoint_detection.utils.tensor_padding import unpad_nans_from_tensor
 
 
 class KeypointDetector(pl.LightningModule):
@@ -155,7 +156,8 @@ class KeypointDetector(pl.LightningModule):
         shared_dict (Dict): a dict with the heatmaps, gt_keypoints and losses
         """
         imgs, corner_keypoints, flap_keypoints = batch
-
+        corner_keypoints = unpad_nans_from_tensor(corner_keypoints)
+        flap_keypoints = unpad_nans_from_tensor(flap_keypoints)
         # load here to device to keep mem consumption low, if possible one could also load entire dataset on GPU to speed up training..
         imgs = imgs.to(self.device)
 
