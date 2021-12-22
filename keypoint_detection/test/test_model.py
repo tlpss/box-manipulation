@@ -67,6 +67,37 @@ class TestModel(unittest.TestCase):
         with torch.no_grad():
             model(imgs)
 
+    def test_non_occluded_batch(self):
+        """
+        run train and evaluation to see if all goes as expected
+        """
+        wandb_logger = WandbLogger(dir=KeypointDetector.get_wand_log_dir_path(), mode="offline")
+
+        model = KeypointDetector(maximal_gt_keypoint_pixel_distances=[2, 4, 5])
+        TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+
+        module = BoxKeypointsDataModule(
+            BoxKeypointsDataset(
+                os.path.join(TEST_DIR, "test_dataset/dataset.json"),
+                os.path.join(TEST_DIR, "test_dataset"),
+                non_occluded_keypoints_only=True,
+            ),
+            2,
+            0.5,  # make sure val dataloader has len >= 1
+        )
+        if torch.cuda.is_available():
+            gpus = 1
+        else:
+            gpus = 0
+
+        trainer = pl.Trainer(max_epochs=10, log_every_n_steps=1, gpus=gpus, logger=wandb_logger)
+        trainer.fit(model, module)
+
+        batch = next(iter(module.train_dataloader()))
+        imgs, corner_keypoints, flap_keypoints = batch
+        with torch.no_grad():
+            model(imgs)
+
     def test_gt_heatmaps(self):
         max_dst = 2
         model = KeypointDetector(heatmap_sigma=8)

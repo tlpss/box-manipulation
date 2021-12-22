@@ -3,10 +3,10 @@ from argparse import ArgumentParser, Namespace
 from typing import Tuple
 
 import pytorch_lightning as pl
+import wandb
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.trainer.trainer import Trainer
 
-import wandb
 from keypoint_detection.data.datamodule import BoxKeypointsDataModule
 from keypoint_detection.data.dataset import BoxDatasetPreloaded
 from keypoint_detection.models.models import KeypointDetector

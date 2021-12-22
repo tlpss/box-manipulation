@@ -128,7 +128,7 @@ class BoxKeypointsDataset(ImageDataset):
         # torch collate function.
         if self.non_occluded_keypoints_only:
             corner_keypoints = pad_tensor_with_nans(corner_keypoints, 4)
-            flap_keypoints = pad_tensor_with_nans(flap_keypoints, 8 if self.flap_keypoints_type == "corner" else 4)
+            flap_keypoints = pad_tensor_with_nans(flap_keypoints, 8)
 
         return image, corner_keypoints, flap_keypoints
 
