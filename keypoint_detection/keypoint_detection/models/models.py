@@ -156,8 +156,8 @@ class KeypointDetector(pl.LightningModule):
         shared_dict (Dict): a dict with the heatmaps, gt_keypoints and losses
         """
         imgs, corner_keypoints, flap_keypoints = batch
-        corner_keypoints = unpad_nans_from_tensor(corner_keypoints)
-        flap_keypoints = unpad_nans_from_tensor(flap_keypoints)
+        corner_keypoints = [unpad_nans_from_tensor(corner_keypoints[i:]) for i in range(corner_keypoints.shape[0])]
+        flap_keypoints = [unpad_nans_from_tensor(flap_keypoints[i:]) for i in range(flap_keypoints.shape[0])]
         # load here to device to keep mem consumption low, if possible one could also load entire dataset on GPU to speed up training..
         imgs = imgs.to(self.device)
 
