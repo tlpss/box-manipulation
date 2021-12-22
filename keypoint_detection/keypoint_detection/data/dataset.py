@@ -1,4 +1,6 @@
 import abc
+import argparse
+import distutils.util
 import json
 import os
 import random
@@ -35,29 +37,50 @@ class BoxKeypointsDataset(ImageDataset):
     cf https://pytorch.org/tutorials/beginner/data_loading_tutorial.html
     """
 
-    def __init__(self, json_file: str, image_dir: str, flap_keypoints_type: str = "corner", non_occluded_only: bool = False):
+    @staticmethod
+    def add_argparse_args(parent_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+        """
+        add named arguments from the init function to the parser
+        The default values here are actually duplicates from the init function, but this was for readability (??)
+        """
+        parser = parent_parser.add_argument_group("BoxkeypointsDataset")
+        parser.add_argument("--image_dataset_path", required=False, type=str)
+        parser.add_argument("--json_dataset_path", required=False, type=str)
+        parser.add_argument("--flap_keypoints_type", required=False, type=str)
+        parser.add_argument("--non_occluded_keypoints_only", type=distutils.util.strtobool)
+
+        return parent_parser
+
+    def __init__(
+        self,
+        json_dataset_path: str,
+        image_dataset_path: str,
+        flap_keypoints_type: str = "corner",
+        non_occluded_keypoints_only: bool = False,
+        **kwargs,
+    ):
         """
         json_file:  path to json file with dataset
         image_dir: path to dir from where the relative image paths in the json are included
         flap_keypoints: 'corner' or 'center', determines which type of keypoints that will be used for the flaps
         """
         super(BoxKeypointsDataset, self).__init__()
-        self.json_file = json_file
-        self.image_dir = image_dir
+        self.json_file = json_dataset_path
+        self.image_dir = image_dataset_path
 
         assert flap_keypoints_type in ["center", "corner"]
         flap_keypoints_type = flap_keypoints_type
 
         self.corner_keypoints_name = "corner_keypoints"
         self.flap_keypoints_name = f"flap_{flap_keypoints_type}_keypoints"
-        if non_occluded_only:
+
+        if non_occluded_keypoints_only:
             self.corner_keypoints_name += "_visible"
             self.flap_keypoints_name += "_visible"
 
-
         self.transform = ToTensor()  # convert images to Torch Tensors
 
-        f = open(json_file, "r")
+        f = open(json_dataset_path, "r")
 
         # dataset format is defined in project README
         self.dataset = json.load(f)
@@ -116,14 +139,25 @@ class BoxDatasetIOCatcher(BoxKeypointsDataset):
     to overcome IOErrors on the GPULab. This does not require the entire dataset to be in memory.
     """
 
-    def __init__(self, json_file: str, image_dir: str, flap_keypoints_type: str = "corner",non_occluded_only: bool = False, n_io_attempts: int = 4):
+    @staticmethod
+    def add_argparse_args(parent_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+        return BoxKeypointsDataset.add_argparse_args(parent_parser)
+
+    def __init__(
+        self,
+        json_dataset_path: str,
+        image_dataset_path: str,
+        flap_keypoints_type: str = "corner",
+        non_occluded_keypoints_only: bool = False,
+        n_io_attempts: int = 4,
+        **kwargs,
+    ):
         """
-        json_file:  path to json file with dataset
-        image_dir: path to dir from where the relative image paths in the json are included
-        flap_keypoints: 'corner' or 'center', determines which type of keypoints that will be used for the flaps
         n_io_attempts: number of trials to load image from IO
         """
-        super().__init__(json_file, image_dir, flap_keypoints_type, non_occluded_only)
+        super().__init__(
+            json_dataset_path, image_dataset_path, flap_keypoints_type, non_occluded_keypoints_only, **kwargs
+        )
         self.n_io_attempts = n_io_attempts
 
     def get_image(self, index: int) -> np.ndarray:
@@ -151,14 +185,30 @@ class BoxDatasetPreloaded(BoxDatasetIOCatcher):
 
     """
 
-    def __init__(self, json_file: str, image_dir: str, flap_keypoints_type: str = "corner",non_occluded_only: bool = False, n_io_attempts: int = 4):
+    @staticmethod
+    def add_argparse_args(parent_parser: argparse.ArgumentParser) -> argparse.ArgumentParser:
+        return BoxDatasetIOCatcher.add_argparse_args(parent_parser)
+
+    def __init__(
+        self,
+        json_dataset_path: str,
+        image_dataset_path: str,
+        flap_keypoints_type: str = "corner",
+        non_occluded_keypoints_only: bool = False,
+        n_io_attempts: int = 4,
+        **kwargs,
+    ):
         """
-        json_file:  path to json file with dataset
-        image_dir: path to dir from where the relative image paths in the json are included
-        flap_keypoints: 'corner' or 'center', determines which type of keypoints that will be used for the flaps
         n_io_attempts: number of trials to load image from IO
         """
-        super().__init__(json_file, image_dir, flap_keypoints_type,non_occluded_only, n_io_attempts)
+        super().__init__(
+            json_dataset_path,
+            image_dataset_path,
+            flap_keypoints_type,
+            non_occluded_keypoints_only,
+            n_io_attempts,
+            **kwargs,
+        )
         self.preloaded_images = [None] * len(self.dataset)
         self._preload()
 

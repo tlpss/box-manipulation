@@ -3,10 +3,10 @@ from argparse import ArgumentParser, Namespace
 from typing import Tuple
 
 import pytorch_lightning as pl
-import wandb
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.trainer.trainer import Trainer
 
+import wandb
 from keypoint_detection.data.datamodule import BoxKeypointsDataModule
 from keypoint_detection.data.dataset import BoxDatasetPreloaded
 from keypoint_detection.models.models import KeypointDetector
@@ -36,8 +36,6 @@ def add_system_args(parent_parser: ArgumentParser) -> ArgumentParser:
     parser = parent_parser.add_argument_group("Trainer")
     parser.add_argument("--batch_size", required=False, type=int)
     parser.add_argument("--train_val_split_ratio", required=False, type=float)
-    parser.add_argument("--image_dataset_path", required=False, type=str)
-    parser.add_argument("--json_dataset_path", required=False, type=str)
 
     return parent_parser
 
@@ -74,7 +72,7 @@ def main(hparams: dict) -> Tuple[KeypointDetector, pl.Trainer]:
     pl.seed_everything(hparams["seed"], workers=True)
     model = KeypointDetector(**hparams)
 
-    dataset = BoxDatasetPreloaded(hparams["json_dataset_path"], hparams["image_dataset_path"], n_io_attempts=5)
+    dataset = BoxDatasetPreloaded(**hparams)
 
     module = BoxKeypointsDataModule(
         dataset,
@@ -110,6 +108,7 @@ if __name__ == "__main__":
     parser = add_system_args(parser)
     parser = KeypointDetector.add_model_argparse_args(parser)
     parser = Trainer.add_argparse_args(parser)
+    parser = BoxDatasetPreloaded.add_argparse_args(parser)
 
     # get parser arguments and filter the specified arguments
     args = vars(parser.parse_args())
