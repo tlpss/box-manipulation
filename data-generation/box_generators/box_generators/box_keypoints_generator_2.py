@@ -14,26 +14,8 @@ hdris = [
 ]
 
 
-def generate_datapoint(output_dir, seed=0):
-    image_name = f"{str(seed)}.png"
-    image_path_relative = os.path.join("images", image_name)
-    image_path = os.path.join(output_dir, image_path_relative)
-
+def make_scene(seed):
     np.random.seed(seed)
-
-    # General settings
-    scene = bpy.context.scene
-    scene.render.engine = "CYCLES"
-    scene.render.image_settings.file_format = "PNG"
-    scene.render.image_settings.color_mode = "RGB"
-    scene.render.resolution_x = 64
-    scene.render.resolution_y = 64
-    scene.render.filepath = image_path
-
-    # Enable GPU
-    bpy.context.preferences.addons["cycles"].preferences.compute_device_type = "OPTIX"
-    scene.cycles.device = "GPU"
-
     cleanup_scene()
 
     # Box creation
@@ -71,6 +53,28 @@ def generate_datapoint(output_dir, seed=0):
     scene = bpy.context.scene
     scene.cycles.samples = 128
     scene.camera = camera
+    return box, camera
+
+
+def generate_datapoint(output_dir, seed=0):
+    image_name = f"{str(seed)}.png"
+    image_path_relative = os.path.join("images", image_name)
+    image_path = os.path.join(output_dir, image_path_relative)
+
+    # General settings
+    scene = bpy.context.scene
+    scene.render.engine = "CYCLES"
+    scene.render.image_settings.file_format = "PNG"
+    scene.render.image_settings.color_mode = "RGB"
+    scene.render.resolution_x = 64
+    scene.render.resolution_y = 64
+    scene.render.filepath = image_path
+
+    # Enable GPU
+    bpy.context.preferences.addons["cycles"].preferences.compute_device_type = "OPTIX"
+    scene.cycles.device = "GPU"
+
+    box, camera = make_scene(seed)
 
     # Box keypoints in 2D
     data = {
