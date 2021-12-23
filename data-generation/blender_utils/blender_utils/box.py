@@ -1,5 +1,5 @@
 import numpy as np
-from blender_utils.visiblevertices import get_visible_vertices
+from blender_utils.visible_vertices import get_visible_vertices
 from bpy_extras.object_utils import world_to_camera_view
 
 

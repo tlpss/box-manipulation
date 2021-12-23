@@ -16,19 +16,10 @@ class TestVisibleVertices(unittest.TestCase):
         result = get_visible_vertices(box)
         self.assertCountEqual(expected, result)
 
-    def test_visible_vertices_flaps_closed(self):
-        expected = [0, 2, 3, 4, 5, 6, 7]
-        bpy.ops.object.delete()  # delete default cube
-        mesh = make_box(0.5, 0.5, 0.5, [3 * np.pi / 4] * 4, (0.5, 0.5))
-        box = make_object("Box", mesh)
-        result = get_visible_vertices(box)
-        self.assertCountEqual(expected, result)
-
 
 if __name__ == "__main__":
     import sys
 
     sys.argv = [__file__] + (sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else [])
-
-    # TestVisibleVertices().test_visible_vertices_flaps_closed()
+    # TestVisibleVertices().test_visible_vertices_flaps_open()
     unittest.main()
