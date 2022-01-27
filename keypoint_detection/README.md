@@ -28,8 +28,9 @@ to create a wandb sweep (for hyperparam tuning or just conveniently running expe
 #### starting agents on GPULab
 The hacky way:
 - start a jupyterhub instance using the project and the Jupyterlab-pytorch docker image from https://gitlab.ilabt.imec.be/tlips/gpulab
-- pull this repository anywhere on the machine (except the project mount), pip install `box-manipulation/keypoint_dection`
-- navigate to the folder relative to which you specified the python script in the sweep
+- pull this repository anywhere on the machine (except the project mount), and run `setup.sh`.
+- activate the conda environment (`conda init` and `conda activate <env>)
+- navigate to the folder relative to which you specified the python script in the sweep.
 - start the agent(s)
 - paste the wandb authorization key
 the nice way:
