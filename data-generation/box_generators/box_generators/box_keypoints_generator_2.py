@@ -7,11 +7,15 @@ from blender_utils.box import get_box_keypoints
 from blender_utils.hdri import load_hdri
 from blender_utils.materials import random_box_material
 from blender_utils.object_ops import cleanup_scene, look_at, make_object, rotate
-from general_utils.make_box import make_box, random_flap_angles
+from general_utils.make_box import make_box
 
 hdris = [
     "studio_small_09_1k.exr",
 ]
+
+
+def outwards_flap_angles():
+    return np.random.uniform(-np.pi / 4, -3 * np.pi / 4, 4)
 
 
 def make_scene(seed):
@@ -26,7 +30,9 @@ def make_scene(seed):
     short_flaps_fraction = np.random.uniform(0.25, 0.5)
     flap_size_fractions = (long_flaps_fraction, short_flaps_fraction)
 
-    angles = random_flap_angles()
+    # angles = random_flap_angles()
+
+    angles = outwards_flap_angles()
 
     mesh = make_box(l, w, h, angles, flap_size_fractions)
     box = make_object("Box", mesh)

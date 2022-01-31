@@ -3,8 +3,6 @@ Script that generates the dataset
 """
 import argparse
 import datetime
-import glob
-import json
 import os
 import sys
 
@@ -19,19 +17,6 @@ def generate_dataset(amount_of_samples, datasets_dir):
 
     for i in range(amount_of_samples):
         box_keypoints_generator_2.generate_datapoint(output_dir, i)
-
-        dataset = []
-
-        for file in glob.glob(os.path.join(output_dir, "json/*.json")):
-            with open(file) as f:
-                dataset.append(json.load(f))
-
-        # TODO add timestamp of generation in json
-        dataset_json = {"dataset": dataset}
-
-        with open(os.path.join(output_dir, "dataset.json"), "w") as f:
-            json.dump(dataset_json, f, indent=2)
-
         # TODO copy generation script to output_dir
 
 
