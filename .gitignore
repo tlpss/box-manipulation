@@ -4,6 +4,8 @@
 !**/test_dataset/
 !**/test_dataset/dataset.json
 
+data-generation/BlenderProc/
+
 **wandb/
 lightning_logs**
 **.ckpt
