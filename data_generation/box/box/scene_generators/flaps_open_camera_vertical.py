@@ -1,4 +1,6 @@
+import argparse
 import os
+import sys
 
 import airo_blender_toolkit as abt
 import bpy
@@ -46,4 +48,11 @@ def generate_scene(seed):
 
 
 if __name__ == "__main__":
-    generate_scene(0)
+    seed = 0
+    if "--" in sys.argv:
+        argv = sys.argv[sys.argv.index("--") + 1 :]
+        parser = argparse.ArgumentParser()
+        parser.add_argument("seed", type=int)
+        args = parser.parse_known_args(argv)[0]
+        seed = args.seed
+    generate_scene(seed)

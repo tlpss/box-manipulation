@@ -16,7 +16,6 @@ def generate_dataset(amount_of_samples, datasets_dir, scene_name, resolution=256
     if scene_name not in box.scene_generators.__all__:
         print(f"No scene found with name {scene_name}")
         return
-
     scene_generator = sys.modules[f"box.scene_generators.{scene_name}"]
 
     for i in range(amount_of_samples):

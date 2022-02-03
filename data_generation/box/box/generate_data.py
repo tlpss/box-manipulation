@@ -1,8 +1,10 @@
+import argparse
 import json
 import os
+import sys
 
+import box
 import bpy
-from box.scene_generators import flaps_open_camera_vertical
 
 
 def generate_data(output_dir, box_scene_generator, seed, resolution=256):
@@ -38,6 +40,25 @@ def generate_data(output_dir, box_scene_generator, seed, resolution=256):
 
 
 if __name__ == "__main__":
-    default_scene_generator = flaps_open_camera_vertical
-    output_dir = default_scene_generator.__name__
-    generate_data(output_dir, default_scene_generator, seed=0)
+    if "--" in sys.argv:
+        home = os.path.expanduser("~")
+        default_datasets_path = os.path.join(home, "datasets")
+
+        argv = sys.argv[sys.argv.index("--") + 1 :]
+        parser = argparse.ArgumentParser()
+        parser.add_argument("scene_name")
+        parser.add_argument("seed", type=int)
+        parser.add_argument(
+            "-d", "--dir", dest="datasets_dir", metavar="DATASETS_DIRECTORY", default=default_datasets_path
+        )
+        args = parser.parse_known_args(argv)[0]
+
+        scene_name = args.scene_name
+        output_dir = os.path.join(args.datasets_dir, f"box {scene_name}")
+
+        if scene_name not in box.scene_generators.__all__:
+            print(f"No scene found with name {scene_name}")
+            exit(-1)
+        scene_generator = sys.modules[f"box.scene_generators.{scene_name}"]
+
+        generate_data(output_dir, scene_generator, args.seed)
