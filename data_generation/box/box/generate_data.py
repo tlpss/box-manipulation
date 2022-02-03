@@ -48,6 +48,7 @@ if __name__ == "__main__":
         parser = argparse.ArgumentParser()
         parser.add_argument("scene_name")
         parser.add_argument("seed", type=int)
+        parser.add_argument("--resolution", type=int, default=256)
         parser.add_argument(
             "-d", "--dir", dest="datasets_dir", metavar="DATASETS_DIRECTORY", default=default_datasets_path
         )
@@ -61,4 +62,4 @@ if __name__ == "__main__":
             exit(-1)
         scene_generator = sys.modules[f"box.scene_generators.{scene_name}"]
 
-        generate_data(output_dir, scene_generator, args.seed)
+        generate_data(output_dir, scene_generator, args.seed, args.resolution)

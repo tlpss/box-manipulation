@@ -33,9 +33,10 @@ if __name__ == "__main__":
         parser = argparse.ArgumentParser()
         parser.add_argument("scene_name")
         parser.add_argument("amount_of_samples", type=int)
+        parser.add_argument("--resolution", type=int, default=256)
         parser.add_argument(
             "-d", "--dir", dest="datasets_dir", metavar="DATASETS_DIRECTORY", default=default_datasets_path
         )
         args = parser.parse_known_args(argv)[0]
 
-        generate_dataset(args.amount_of_samples, args.datasets_dir, args.scene_name)
+        generate_dataset(args.amount_of_samples, args.datasets_dir, args.scene_name, args.resolution)
