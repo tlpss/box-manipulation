@@ -50,7 +50,7 @@ def make_box(
     flap_angles: Tuple[float, float, float, float],
     flap_size_fractions: Tuple[float, float],
 ):
-    """Generate the geometry (a mesh) of a simple rectangular box with 4 rectangular flaps.
+    """Generate the mesh of a simple rectangular box with 4 rectangular flaps.
      The opposing flaps are always the same length.
 
     Args:
