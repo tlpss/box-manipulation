@@ -1,15 +1,17 @@
-import os
 from typing import Tuple
 
 import airo_blender_toolkit as abt
 import numpy as np
-from custom_blender_objects import KeypointedObject
 
-os.environ.setdefault("INSIDE_OF_THE_INTERNAL_BLENDER_PYTHON_ENVIRONMENT", "1")
-from blenderproc.python.types.MeshObjectUtility import MeshObject
+from .keypointed_object import KeypointedObject
 
 
-class Box(KeypointedObject, MeshObject):
+class Box(KeypointedObject):
+    keypoint_ids = {
+        "corner": [4, 5, 6, 7],
+        "flap_corner": [8, 9, 10, 11, 12, 13, 14, 15],
+    }
+
     def __init__(
         self,
         box_length: float,
@@ -27,11 +29,8 @@ class Box(KeypointedObject, MeshObject):
 
         self.mesh = self._create_mesh()
         blender_obj = abt.make_object(name="box", mesh=self.mesh)
-        super(MeshObject, self).__init__(blender_obj)
 
-    def __setattr__(self, key, value):
-        """Reset the __setattr__ because the Entity parent class disallows assignment."""
-        object.__setattr__(self, key, value)
+        super().__init__(blender_obj, Box.keypoint_ids)
 
     def _create_mesh(self):
         """Generate the mesh of a simple rectangular box with 4 rectangular flaps.
@@ -169,6 +168,3 @@ class Box(KeypointedObject, MeshObject):
 
     def _above(flap_angle):
         return 0 <= flap_angle <= np.pi / 2
-
-    def keypoints(self):
-        pass
