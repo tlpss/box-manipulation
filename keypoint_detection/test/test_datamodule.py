@@ -19,7 +19,7 @@ class TestDataSet(unittest.TestCase):
         dataset = BoxKeypointsDataset(self.json_path, self.image_path)
         item = dataset.__getitem__(0)
         img, corner, flap = item
-        self.assertEqual(img.shape, (3, 256, 256))
+        self.assertEqual(img.shape, (3, 64, 64))
         self.assertEqual(len(corner), 4)
         self.assertEqual(len(flap), 8)
 
@@ -54,13 +54,13 @@ class TestDataModule(unittest.TestCase):
     def test_split(self):
         module = BoxKeypointsDataModule(self.dataset, batch_size=1)
         train_dataloader = module.train_dataloader()
-        self.assertEqual(len(train_dataloader), 2)
+        self.assertEqual(len(train_dataloader), 4)
 
         module = BoxKeypointsDataModule(self.dataset, batch_size=1, validation_split_ratio=0.5)
         train_dataloader = module.train_dataloader()
         validation_dataloader = module.train_dataloader()
-        self.assertEqual(len(train_dataloader), 1)
-        self.assertEqual(len(validation_dataloader), 1)
+        self.assertEqual(len(train_dataloader), 2)
+        self.assertEqual(len(validation_dataloader), 2)
 
     def test_batch_format(self):
         module = BoxKeypointsDataModule(self.dataset, batch_size=1)
@@ -72,8 +72,8 @@ class TestDataModule(unittest.TestCase):
         img, corner_kp, flap_kp = batch
 
         self.assertIsInstance(img, torch.Tensor)
-        self.assertEquals(img.shape, (1, 3, 256, 256))
+        self.assertEquals(img.shape, (1, 3, 64, 64))
         self.assertIsInstance(corner_kp, torch.Tensor)
-        self.assertEquals(corner_kp.shape, (1, 4, 2))
+        self.assertEquals(corner_kp.shape, (1, 4, 3))
         self.assertIsInstance(flap_kp, torch.Tensor)
-        self.assertEquals(flap_kp.shape, (1, 8, 2))
+        self.assertEquals(flap_kp.shape, (1, 8, 3))
