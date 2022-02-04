@@ -4,9 +4,10 @@
 !**/test_dataset/
 !**/test_dataset/dataset.json
 
+data_generation/BlenderProc/
+
 **wandb/
 lightning_logs**
 **.ckpt
 **/checkpoints/
-data-generation/assets
 .idea/**
