@@ -24,7 +24,8 @@ def generate_scene(seed):
     ground.blender_obj.name = "ground"
     ground.set_scale([1.5] * 3)
     ground.set_rotation_euler([0, 0, np.random.uniform(0.0, 2 * np.pi)])
-    ground_texture = "aerial_asphalt_01"
+    ground_texture = abt.random_texture_name(haven_textures_folder)
+    print(ground_texture)
     bproc.api.loader.load_haven_mat(haven_textures_folder, [ground_texture])
     ground_material = bpy.data.materials[ground_texture]
     ground.blender_obj.data.materials.append(ground_material)
