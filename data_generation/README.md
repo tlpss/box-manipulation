@@ -29,6 +29,7 @@ alias bpython="$blender_path/3.0/python/bin/python3.9"
 
 Installing BlenderProc
 ```
+cd ~
 git clone https://github.com/DLR-RM/BlenderProc.git
 bpython -m pip install -e BlenderProc
 ```

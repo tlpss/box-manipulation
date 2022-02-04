@@ -7,7 +7,7 @@ output_folder = os.path.join(home, "assets")
 if not os.path.exists(output_folder):
     os.makedirs(output_folder)
 
-bproc_download_script = "BlenderProc/blenderproc/scripts/download_haven.py"
+bproc_download_script = os.path.join(home, "BlenderProc/blenderproc/scripts/download_haven.py")
 resolution = "1k"
 types = "hdris textures"
 
