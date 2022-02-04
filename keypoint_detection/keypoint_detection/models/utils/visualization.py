@@ -46,7 +46,7 @@ def visualize_predictions(
                             imgs.shape[-2:],
                             get_keypoints_from_heatmap(predicted_heatmaps[i].cpu(), minimal_keypoint_pixel_distance),
                             sigma=max(1, int(imgs.shape[-1] / 64)),
-                            device = 'cpu'
+                            device="cpu",
                         ),
                         0,
                     ),

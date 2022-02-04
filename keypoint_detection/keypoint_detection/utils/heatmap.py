@@ -8,7 +8,10 @@ from skimage.feature import peak_local_max
 
 
 def gaussian_heatmap(
-    image_size: Tuple[int, int], center: Union[Tuple[float, float], List[float]], sigma: torch.Tensor, device: torch.device
+    image_size: Tuple[int, int],
+    center: Union[Tuple[float, float], List[float]],
+    sigma: torch.Tensor,
+    device: torch.device,
 ) -> torch.Tensor:
     """
     Creates a Gaussian blob heatmap for a single keypoint.
@@ -26,8 +29,8 @@ def gaussian_heatmap(
     # cast keypoints (center) to ints to make grid align with pixel raster.
     #  Otherwise, the AP metric for  d = 1 will not result in 1
     #  if the gt_heatmaps are used as input.
-    u_axis = torch.linspace(0, image_size[1] - 1, image_size[1], device  = device) - int(center[0])
-    v_axis = torch.linspace(0, image_size[0] - 1, image_size[0], device = device) - int(center[1])
+    u_axis = torch.linspace(0, image_size[1] - 1, image_size[1], device=device) - int(center[0])
+    v_axis = torch.linspace(0, image_size[0] - 1, image_size[0], device=device) - int(center[1])
     # create grid values in 2D with x and y coordinate centered aroud the keypoint
     xx, yy = torch.meshgrid(v_axis, u_axis)
     ## create gaussian around the centered 2D grids $ exp ( -0.5 (x**2 + y**2) / sigma**2)$
@@ -47,7 +50,7 @@ def generate_keypoints_heatmap(
         image_size: Tuple(int,int) that specify (H,W) of the heatmap image
         keypoints: List(Tuple(int,int), ...) with keypoints (u,v).
         sigma: (float) std deviation of the blobs
-        device: the device on which to allocate new tensors 
+        device: the device on which to allocate new tensors
 
     Returns:
          Torch.tensor:  A Tensor with the combined heatmaps of all keypoints.

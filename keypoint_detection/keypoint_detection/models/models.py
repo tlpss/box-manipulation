@@ -3,7 +3,6 @@ import distutils.util
 from pathlib import Path
 from typing import Any, Dict, List, Tuple, Union
 
-import numpy as np
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
@@ -39,6 +38,8 @@ class KeypointDetector(pl.LightningModule):
         parser.add_argument("--minimal_keypoint_extract_pixel_distance", type=int, required=False)
         parser.add_argument("--maximal_gt_keypoint_pixel_distances", type=str, required=False)
         parser.add_argument("--learning_rate", type=float, required=False)
+        parser.add_argument("--ap_epoch_start", type=int, required=False)
+        parser.add_argument("--ap_epoch_freq", type=int, required=False)
 
         BackboneFactory.add_to_argparse(parent_parser)
         LossFactory.add_to_argparse(parent_parser)
@@ -54,6 +55,8 @@ class KeypointDetector(pl.LightningModule):
         learning_rate: float = 5e-4,
         backbone: str = "DilatedCnn",
         loss: str = "bce",
+        ap_epoch_start: int = 3,
+        ap_epoch_freq: int = 5,
         **kwargs,
     ):
         """[summary]
@@ -86,8 +89,8 @@ class KeypointDetector(pl.LightningModule):
 
         self.heatmap_sigma = heatmap_sigma
 
-        self.ap_epoch_start = 2
-        self.ap_epoch_freq = 3
+        self.ap_epoch_start = ap_epoch_start
+        self.ap_epoch_freq = ap_epoch_freq
 
         if maximal_gt_keypoint_pixel_distances:
 
@@ -301,7 +304,11 @@ class KeypointDetector(pl.LightningModule):
         return mean_ap
 
     def is_ap_epoch(self):
-        return self.ap_epoch_start <= self.current_epoch and self.current_epoch % self.ap_epoch_freq == 0
+        return (
+            self.ap_epoch_start <= self.current_epoch
+            and self.current_epoch % self.ap_epoch_freq == 0
+            or self.current_epoch == self.trainer.max_epochs - 1
+        )
 
     def create_heatmap_batch(self, shape: Tuple[int, int], keypoints: torch.Tensor) -> torch.Tensor:
         """[summary]
@@ -315,7 +322,8 @@ class KeypointDetector(pl.LightningModule):
         """
 
         batch_heatmaps = [
-            generate_keypoints_heatmap(shape, keypoints[i], self.heatmap_sigma, self.device) for i in range(len(keypoints))
+            generate_keypoints_heatmap(shape, keypoints[i], self.heatmap_sigma, self.device)
+            for i in range(len(keypoints))
         ]
         batch_heatmaps = torch.stack(batch_heatmaps, dim=0)
         return batch_heatmaps

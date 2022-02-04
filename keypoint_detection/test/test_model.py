@@ -19,7 +19,9 @@ class TestHeatmapUtils(unittest.TestCase):
         self.keypoints = [[10, 4], [10, 8], [30, 7]]
         self.sigma = 3
 
-        self.heatmaps = generate_keypoints_heatmap((self.image_height, self.image_width), self.keypoints, self.sigma, 'cpu')
+        self.heatmaps = generate_keypoints_heatmap(
+            (self.image_height, self.image_width), self.keypoints, self.sigma, "cpu"
+        )
         self.model = KeypointDetector()
 
     def test_perfect_heatmap(self):
