@@ -313,16 +313,12 @@ class KeypointDetector(pl.LightningModule):
         Returns:
             (torch.Tensor): N x H x W Tensor with N heatmaps
         """
-        # TODO: profile to see if the conversion from and to GPU does not introduce a bottleneck
-        # alternative is to create heatmaps on GPU by passing device to the generate_keypoints_heatmap function
 
-        # convert keypoints to cpu to create the heatmaps
         batch_heatmaps = [
-            generate_keypoints_heatmap(shape, keypoints[i].cpu(), self.heatmap_sigma) for i in range(len(keypoints))
+            generate_keypoints_heatmap(shape, keypoints[i], self.heatmap_sigma, self.device) for i in range(len(keypoints))
         ]
-        batch_heatmaps = np.stack(batch_heatmaps, axis=0)
-        batch_heatmaps = torch.from_numpy(batch_heatmaps)
-        return batch_heatmaps.to(self.device)
+        batch_heatmaps = torch.stack(batch_heatmaps, dim=0)
+        return batch_heatmaps
 
     def extract_detected_keypoints(self, heatmap: torch.Tensor) -> List[DetectedKeypoint]:
         """
