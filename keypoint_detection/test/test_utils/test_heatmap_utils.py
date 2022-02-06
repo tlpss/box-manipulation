@@ -13,11 +13,13 @@ class TestHeatmapUtils(unittest.TestCase):
         self.sigma = 3
 
     def test_gaussian(self):
-        img = gaussian_heatmap((self.image_height, self.image_width), self.keypoints[0], torch.Tensor([self.sigma]))
+        img = gaussian_heatmap(
+            (self.image_height, self.image_width), self.keypoints[0], torch.Tensor([self.sigma]), device="cpu"
+        )
         self.assertEqual(img.shape, (self.image_height, self.image_width))
 
     def test_keypoint_generation_and_extraction(self):
-        heatmap = generate_keypoints_heatmap((self.image_height, self.image_width), self.keypoints, self.sigma)
+        heatmap = generate_keypoints_heatmap((self.image_height, self.image_width), self.keypoints, self.sigma, "cpu")
         extracted_keypoints = get_keypoints_from_heatmap(heatmap, 1)
         for keypoint in extracted_keypoints:
             self.assertTrue(keypoint in self.keypoints)

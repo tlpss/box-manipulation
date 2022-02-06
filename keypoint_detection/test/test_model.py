@@ -19,7 +19,9 @@ class TestHeatmapUtils(unittest.TestCase):
         self.keypoints = [[10, 4], [10, 8], [30, 7]]
         self.sigma = 3
 
-        self.heatmaps = generate_keypoints_heatmap((self.image_height, self.image_width), self.keypoints, self.sigma)
+        self.heatmaps = generate_keypoints_heatmap(
+            (self.image_height, self.image_width), self.keypoints, self.sigma, "cpu"
+        )
         self.model = KeypointDetector()
 
     def test_perfect_heatmap(self):
@@ -58,6 +60,8 @@ class TestModel(unittest.TestCase):
             gpus = 1
         else:
             gpus = 0
+        gpus = 1
+        print(gpus)
 
         trainer = pl.Trainer(max_epochs=2, log_every_n_steps=1, gpus=gpus, logger=wandb_logger)
         trainer.fit(model, module)
