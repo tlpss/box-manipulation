@@ -2,7 +2,7 @@ import os
 import subprocess
 
 home = os.path.expanduser("~")
-output_folder = os.path.join(home, "assets")
+output_folder = os.path.join(home, "assets", "haven")
 
 if not os.path.exists(output_folder):
     os.makedirs(output_folder)
