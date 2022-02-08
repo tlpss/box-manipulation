@@ -1,0 +1,23 @@
+
+name: Pytest Keypoint Detector
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: moveit/moveit2:galactic-source
+    steps:
+      - uses: actions/checkout@v2
+      - name: prepare and build
+        run: |
+          cd keypoint_detection
+          source /opt/conda/bin/activate
+          conda activate python39
+          pip install -e  box-manipulation/keypoint_detection
+          pytest . 
+        shell: bash
