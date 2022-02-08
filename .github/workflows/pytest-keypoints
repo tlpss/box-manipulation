@@ -19,5 +19,5 @@ jobs:
           source /opt/conda/bin/activate
           conda activate python39
           pip install -e  box-manipulation/keypoint_detection
-          pytest . 
+          pytest .
         shell: bash
