@@ -126,6 +126,11 @@ class KeypointDetector(pl.LightningModule):
             kernel_size=(3, 3),
             padding="same",
         )
+        # initialize bias to zeros to avoid "hockey stick" loss curves
+        # as most of the desired pixel outputs are zeros, so network should not have to learn this
+        # cf Karpathy's guide on how to train networks.
+        head.bias = torch.nn.Parameter(torch.zeros(self.n_channels_out))
+
         self.model = nn.Sequential(
             backbone,
             head,
