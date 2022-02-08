@@ -8,8 +8,6 @@ class ResNetBlock(nn.Module):
     """
     based on the basic ResNet Block used in torchvision
     inspired on https://jarvislabs.ai/blogs/resnet
-
-    different from Peter in the position of the Norms?
     """
 
     def __init__(self, n_channels_in, n_channels=32):
