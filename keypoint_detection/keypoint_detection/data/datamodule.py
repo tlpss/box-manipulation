@@ -16,11 +16,11 @@ class BoxKeypointsDataModule(pl.LightningDataModule):
         )
 
     def train_dataloader(self):
-        dataloader = DataLoader(self.train_dataset, self.batch_size, shuffle=True, num_workers=2)
+        dataloader = DataLoader(self.train_dataset, self.batch_size, shuffle=True, num_workers=4)
         return dataloader
 
     def val_dataloader(self):
-        dataloader = DataLoader(self.validation_dataset, self.batch_size, shuffle=False, num_workers=2)
+        dataloader = DataLoader(self.validation_dataset, self.batch_size, shuffle=False, num_workers=4)
         return dataloader
 
     def test_dataloader(self):
