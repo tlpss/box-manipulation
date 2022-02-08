@@ -35,13 +35,13 @@ class UpSamplingBlock(nn.Module):
 
 
 class UnetBackbone(Backbone):
-    def __init__(self, n_channels_in,n_downsampling_layers, n_resnet_blocks, channels, kernel_size, dilation, **kwargs):
+    def __init__(self, n_channels_in,n_downsampling_layers, n_resnet_blocks, n_channels, kernel_size, dilation, **kwargs):
         super().__init__()
-        self.n_channels = channels
-        self.conv1 = nn.Conv2d(n_channels_in, channels, kernel_size, padding="same")
-        self.downsampling_blocks = [StridedDownSamplingBlock(channels,channels,kernel_size,dilation) for _ in range(n_downsampling_layers)]
-        self.resnet_blocks = [ResNetBlock(channels,channels) for _ in range(n_resnet_blocks)]
-        self.upsampling_blocks = [UpSamplingBlock(n_channels_in=channels,n_channels_out=channels,kernel_size=kernel_size) for _ in range(n_downsampling_layers)]
+        self.n_channels = n_channels
+        self.conv1 = nn.Conv2d(n_channels_in, n_channels, kernel_size, padding="same")
+        self.downsampling_blocks = [StridedDownSamplingBlock(n_channels,n_channels,kernel_size,dilation) for _ in range(n_downsampling_layers)]
+        self.resnet_blocks = [ResNetBlock(n_channels,n_channels) for _ in range(n_resnet_blocks)]
+        self.upsampling_blocks = [UpSamplingBlock(n_channels_in=n_channels,n_channels_out=n_channels,kernel_size=kernel_size) for _ in range(n_downsampling_layers)]
 
     def forward(self,x):
         skips = []
