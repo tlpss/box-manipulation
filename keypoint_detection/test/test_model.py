@@ -40,13 +40,6 @@ class TestModel(unittest.TestCase):
     def setUp(self) -> None:
         self.model = KeypointDetector()
 
-    def test_zero_bias(self):
-        model = KeypointDetector(maximal_gt_keypoint_pixel_distances=[2, 4, 5])
-        x = torch.zeros(1, 3, 64, 64)
-        z = model(x)
-        z = torch.sum(z ** 2).item()
-        self.assertAlmostEqual(z, 0.0)
-
     def test_batch(self):
         """
         run train and evaluation to see if all goes as expected
