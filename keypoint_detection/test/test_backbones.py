@@ -1,6 +1,7 @@
 import unittest
 
 import torch
+from keypoint_detection.keypoint_detection.models.backbones.pretrained import PretrainedBackbone
 
 from keypoint_detection.models.backbones.dilated_cnn import DilatedCnn
 from keypoint_detection.models.backbones.s3k import S3K
@@ -35,3 +36,8 @@ class TestBackbones(unittest.TestCase):
         ).to(self.device)
         output = backbone(self.x).cpu()
         self.assertEqual((output.shape), (4, 4, 64, 64))
+
+    def test_pretrained(self):
+        backbone = PretrainedBackbone("resnet18").to(self.device)
+        output = backbone(self.x).cpu()
+        self.assertEqual((output.shape),(4,2048,7,7)) #TODO: assert shape matches resnet18
