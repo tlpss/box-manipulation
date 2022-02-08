@@ -8,7 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    container: gitlab+deploy-token-8:YHsqg1MHW-C4GJpr_B-D@gitlab.ilabt.imec.be:4567/tlips/gpulab/jupyterlab-pytorch:latest
+    container: gitlab.ilabt.imec.be:4567/tlips/gpulab/jupyterlab-pytorch:latest
     steps:
       - uses: actions/checkout@v2
       - name: prepare and build
