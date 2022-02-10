@@ -23,7 +23,7 @@ def generate_scene(seed):
 
     ground = bproc.object.create_primitive("PLANE")
     ground.blender_obj.name = "ground"
-    ground.set_scale([1.5] * 3)
+    ground.set_scale([5] * 3)
     ground.set_rotation_euler([0, 0, np.random.uniform(0.0, 2 * np.pi)])
     ground_texture = abt.random_texture_name(haven_textures_folder)
     print(ground_texture)
@@ -53,7 +53,11 @@ def generate_scene(seed):
     box_material.set_principled_shader_value("Base Color", tuple(box_color) + (1,))
 
     camera = bpy.context.scene.camera
-    camera.location = (0, 0, 1.25)
+    camera_location = bproc.sampler.part_sphere(center=[0, 0, 0], radius=1.5, mode="INTERIOR", dist_above_center=1.25)
+    camera_rotation = bproc.python.camera.CameraUtility.rotation_from_forward_vec((0, 0, 0) - camera_location)
+    camera_pose = bproc.math.build_transformation_mat(camera_location, camera_rotation)
+    bproc.camera.add_camera_pose(camera_pose)
+
     camera.scale = [0.2] * 3
     camera.data.lens = 24
 
