@@ -20,24 +20,33 @@ By default `generate_data.py` and `generate_dataset.py` will save their results 
 For an overview of the different scenes look at the `scene_generators` folder.
 
 ## Installation:
-Add to `.bashrc` for convenience:
-```bash
-blender_path="/home/$USER/Blender/blender-3.0.0-linux-x64/"
-export PATH="$PATH:$blender_path"
-alias bpython="$blender_path/3.0/python/bin/python3.9"
+
+### 1. Installing Blender and venvifying its Python
+Download and unzip [Blender](https://www.blender.org/).
+
+Then run:
 ```
+cd ~/blender-3.0.0-linux-x64/3.0/python/bin
+./python3.9 -m ensurepip
+./pip3 install venvify
+./venvify .. --env_name blender
+source activate
+```
+
+### 2. Installing packages
+Make sure the blender environment is still activated.
 
 Installing BlenderProc
 ```
 cd ~
 git clone https://github.com/DLR-RM/BlenderProc.git
-bpython -m pip install -e BlenderProc
+python -m pip install -e BlenderProc
 ```
 
 Installing the box package
 ```
 cd data_generation
-bpython -m pip install -e box
+python -m pip install -e box
 ```
 
 Install `airo-blender-toolkit`
