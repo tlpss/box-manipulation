@@ -1,0 +1,3 @@
+[submodule "keypoint_detection/keypoint_detection"]
+	path = keypoint_detection/keypoint_detection
+	url = git@github.com:tlpss/keypoint-detection.git
