@@ -15,8 +15,10 @@ if [[ -d ~/box-manipulation ]]; then
     echo "removing box dir"
     sudo rm -r ~/box-manipulation
 fi
-git clone https://github.com/tlpss/box-manipulation.git git clone --recurse-submodules
+git clone https://github.com/tlpss/box-manipulation.git --recurse-submodules
 
 # install keypoint_detection package
 # install in dev mode to enable symlinks
 pip install -e  box-manipulation/keypoint_detection/keypoint_detection
+
+cd box-manipulation/keypoint_detection/keypoint_detection/keypoint_detection/train
