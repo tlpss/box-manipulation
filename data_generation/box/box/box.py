@@ -2,8 +2,7 @@ from typing import Tuple
 
 import airo_blender_toolkit as abt
 import numpy as np
-
-from .keypointed_object import KeypointedObject
+from airo_blender_toolkit import KeypointedObject
 
 
 class Box(KeypointedObject):
