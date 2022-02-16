@@ -2,9 +2,7 @@
 // https://github.com/microsoft/vscode-dev-containers/tree/v0.202.5/containers/ubuntu
 {
 	"name": "box-manipulation-dev-container",
-	"build":{
-		"dockerfile": "docker/JupyterLab/Dockerfile"
-	},
+	"image": "gitlab.ilabt.imec.be:4567/tlips/gpulab/jupyterlab-pytorch:latest",
 	// increase shared memory to 1GB
 	// enable GPUs on the local device (requires nivida docker toolkit!)
 	"runArgs": ["--shm-size=1g" , "--gpus", "all"],
