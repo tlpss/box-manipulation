@@ -129,8 +129,8 @@ class Box(KeypointedObject):
         v2[2] += flap_length
         v3[2] += flap_length
 
-        v2 = abt.rotate_vertex(v2, v0, v1 - v0, angle)
-        v3 = abt.rotate_vertex(v3, v1, v1 - v0, angle)
+        v2 = abt.rotate_point(v2, v0, v1 - v0, angle)
+        v3 = abt.rotate_point(v3, v1, v1 - v0, angle)
 
         vertices += [v2, v3]
         edges += [(id0, id2), (id2, id3), (id3, id1)]

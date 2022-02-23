@@ -31,6 +31,12 @@ def generate_scene(seed):
     ground_material = bpy.data.materials[ground_texture]
     ground.blender_obj.data.materials.append(ground_material)
 
+    # Temporary way to make textures look smaller
+    mesh = ground.blender_obj.data
+    uv_layer = mesh.uv_layers.active
+    for loop in mesh.loops:
+        uv_layer.data[loop.index].uv *= 5
+
     box_length = np.random.uniform(0.2, 0.5)
     box_width = np.random.uniform(0.2, box_length)
     box_height = np.random.uniform(0.1, 0.3)
@@ -47,7 +53,7 @@ def generate_scene(seed):
     box_color = Color()
     box_hue = np.random.uniform(0, 0.14)
     box_saturation = np.random.uniform(0.4, 0.8)
-    box_value = np.random.uniform(0.2, 0.5)
+    box_value = np.random.uniform(0.2, 0.8)
     box_color.hsv = box_hue, box_saturation, box_value
     box_material = box.new_material("box")
     box_material.set_principled_shader_value("Base Color", tuple(box_color) + (1,))
